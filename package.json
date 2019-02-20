@@ -1,0 +1,32 @@
+{
+  "name": "ejs2",
+  "version": "1.0.0",
+  "description": "EJS next gen",
+  "main": "./lib/ejs.js",
+  "scripts": {
+    "test": "jest",
+    "cover": "jest --coverage --coverageDirectory=coverage/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ichiriac/ejs2.git"
+  },
+  "keywords": [
+    "ejs",
+    "templating"
+  ],
+  "author": "Ioan CHIRIAC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ichiriac/ejs2/issues"
+  },
+  "homepage": "https://github.com/ichiriac/ejs2#readme",
+  "jest": {
+    "testEnvironment": "node",
+    "testURL": "http://localhost/"
+  },
+  "devDependencies": {
+    "coveralls": "^3.0.2",
+    "jest": "^24.1.0"
+  }
+}
