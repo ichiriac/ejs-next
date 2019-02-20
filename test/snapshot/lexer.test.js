@@ -11,7 +11,7 @@ describe('Lexer', () => {
   it('Simple case', () => {
     var lex = new lexer();
     lex.input(`
-    <foo>
+    <foo><%% 
     <%# comment %>
     <%_ if (foo == "%>\\"%>") { _%>
       <%= bar %>
