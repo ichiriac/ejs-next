@@ -5,14 +5,13 @@
  */
 "use strict";
 
-const parser = require('../lib/ejs');
-const reader = new parser();
-const program = reader.eval(`
-<foo> <%%
-<%# comment %>
-<%_ if (foo == "%>\\"%>") { _%>
-  <%= bar %>
-<% } %>
-</foo>
-`);
-console.log(program);
+const ejs = require('../lib/ejs');
+ejs.render(`
+  <%_ if (wat) { _%>
+    ok
+  <%_ } _%>
+`, { name: 'World' })
+  .then(function(output) {
+    console.log(output);
+  })
+;

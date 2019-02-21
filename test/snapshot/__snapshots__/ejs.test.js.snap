@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Template Simple case 1`] = `"Hello World"`;
+
+exports[`Template Statement 1`] = `"ok"`;
