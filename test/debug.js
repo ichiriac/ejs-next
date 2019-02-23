@@ -7,8 +7,8 @@
 
 const ejs = require('../lib/ejs');
 ejs.render(`
-  <%_ if (wat) { _%>
-    ok
+  <%_ if (!wat) { _%>
+    ok <%= foo || "<>" %>
   <%_ } _%>
 `, { name: 'World' })
   .then(function(output) {
