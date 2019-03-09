@@ -9,6 +9,12 @@
       "request": "launch",
       "name": "Launch Program",
       "program": "${workspaceFolder}/test/debug.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Benchmark",
+      "program": "${workspaceFolder}/test/bench.js"
     }
   ]
 }
