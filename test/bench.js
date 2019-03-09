@@ -44,7 +44,7 @@ suite.on('complete', function() {
     ejs.render(tpl);
   });
   suite2.add('ejs2 - render', function() {
-    ejs2.render(tpl);
+    ejs2.render(tpl, null, { strict: true });
   });
   // add listeners
   suite2.on('cycle', function(event) {

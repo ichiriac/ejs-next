@@ -27,7 +27,14 @@ Let's see some random numbers:
 %> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
   });
 %>
-`, { name: 'World' })
+`,
+    { 
+      name: 'World' 
+    },
+    {
+      strict: true
+    }
+  )
   .then(function(output) {
     console.log(output);
   })
