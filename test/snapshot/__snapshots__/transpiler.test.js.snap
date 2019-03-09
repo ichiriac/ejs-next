@@ -1,7 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Transpiler More complex 1`] = `
-"with(foo) {
+"if (!ejs || typeof ejs.context !== \\"function\\") {
+	foo = ejs;
+	if (typeof window !== \\"undefined\\") {
+		ejs = window.ejs;
+	} else if (typeof global !== \\"undefined\\") {
+		ejs = global.ejs;
+	} else {
+		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	}
+}
+foo = ejs.context(foo, {\\"strict\\":false,\\"localsName\\":\\"foo\\"},\\"undefined\\");
+with(foo) {
 	echo(\`
 OK, so have fun! :D
 -------------------
@@ -45,7 +56,18 @@ return foo.resolveOutput();"
 `;
 
 exports[`Transpiler Simple case 1`] = `
-"with(foo) {
+"if (!ejs || typeof ejs.context !== \\"function\\") {
+	foo = ejs;
+	if (typeof window !== \\"undefined\\") {
+		ejs = window.ejs;
+	} else if (typeof global !== \\"undefined\\") {
+		ejs = global.ejs;
+	} else {
+		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	}
+}
+foo = ejs.context(foo, {\\"strict\\":false,\\"localsName\\":\\"foo\\"},\\"undefined\\");
+with(foo) {
 	echo(\`
     <foo> \`);
 	%
