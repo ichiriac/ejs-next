@@ -24,38 +24,36 @@ Let's see some random numbers:
 %>
 `;
 
-// define benchmark
-var suite = new benchmark.Suite;
-suite.add('ejs1 - compile', function() {
-  ejs.compile(tpl);
-});
-suite.add('ejs2 - compile', function() {
-  ejs2.compile(tpl);
-});
-// add listeners
-suite.on('cycle', function(event) {
-  console.log(String(event.target));
-});
-suite.on('complete', function() {
-  console.log('Fastest is ' + this.filter('fastest').map('name'));
-});
-// run async
-suite.run();
+/**
+ * Test helper
+ */
+function test(name, fn) {
+  // define benchmark
+  var suite = new benchmark.Suite;
+  suite.add('ejs1 - ' + name, function() {
+    fn(ejs);
+  });
+  suite.add('ejs2 - ' + name, function() {
+    fn(ejs2);
+  });
+  // add listeners
+  suite.on('cycle', function(event) {
+    console.log(String(event.target));
+  });
+  suite.on('complete', function() {
+    console.log('Fastest is ' + this.filter('fastest').map('name'));
+  });
+  // run async
+  suite.run();
+}
 
 // define benchmark
-suite = new benchmark.Suite;
-suite.add('ejs1 - render', function() {
-  ejs.render(tpl, null, { strict: true });
+test('compile', function(instance) {
+  instance.compile(tpl);
 });
-suite.add('ejs2 - render', function() {
-  ejs2.render(tpl, null, { strict: true });
+test('render strict', function(instance) {
+  instance.render(tpl, null, { strict: true });
 });
-// add listeners
-suite.on('cycle', function(event) {
-  console.log(String(event.target));
+test('render silent', function(instance) {
+  instance.render(tpl, null, { strict: false });
 });
-suite.on('complete', function() {
-  console.log('Fastest is ' + this.filter('fastest').map('name'));
-});
-// run async
-suite.run();
