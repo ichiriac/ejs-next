@@ -4,9 +4,9 @@
  * @url https://ejs.js.org
  */
 "use strict";
-
 const ejs = require('../lib/ejs');
-ejs.render(`
+const ejs1 = require('ejs');
+const tpl = `
 OK, so have fun! :D
 -------------------
 <%
@@ -16,9 +16,10 @@ OK, so have fun! :D
 %>
 
 These fruits are amazing:
-<%_ for(var i = 0; i < fruits.length; ++i) { %>
-  - <%=fruits[i]%>s
-<%_ } %>
+<%_ for(var i = 0; i < fruits.length; ++i) { _%>
+
+  - <%= fruits[i] %>s
+<%_ } _%>
 
 Let's see some random numbers:
 
@@ -27,15 +28,12 @@ Let's see some random numbers:
 %> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
   });
 %>
-`,
-    { 
-      name: 'World' 
-    },
-    {
-      strict: true
-    }
-  )
+`;
+
+
+ejs.render(tpl, { name: 'World' }, { strict: true })
   .then(function(output) {
     console.log(output);
+    console.log(ejs1.render(tpl));
   })
 ;
