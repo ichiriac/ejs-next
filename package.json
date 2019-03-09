@@ -30,6 +30,7 @@
     "coveralls": "^3.0.2",
     "ejs": "^2.6.1",
     "jest": "^24.1.0",
-    "microtime": "^3.0.0"
+    "microtime": "^3.0.0",
+    "uglify-js": "^3.4.9"
   }
 }

@@ -27,4 +27,21 @@ var output = [];
 
 var code = fs.readFileSync("lib/browser.js").toString();
 code = code.replace(/\/\/ @body/g, output.join(""));
-fs.writeFileSync("dist/ejs.js", code);
+
+// compressed version
+var UglifyJS = require('uglify-js');
+var result = UglifyJS.minify(code, {
+  mangle: true
+});
+if (result.error) {
+  fs.writeFileSync("dist/ejs.js", code);
+  console.error(result.error);
+} else {
+  fs.writeFileSync("dist/ejs.js", code);
+  fs.writeFileSync("dist/ejs.min.js", result.code);
+  console.log("Uncompressed size : " + Math.round(code.length / 102.4) / 10 + 'Ko');
+  var count = (code.match(/^\s*[A-Za-z0-9\}\)\;]+/gm) || []).length;
+  console.log("Lines of code     : " + count);
+  console.log("Compressed size   : " + Math.round(result.code.length / 102.4) / 10 + 'Ko');
+
+}
