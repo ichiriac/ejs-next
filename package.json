@@ -26,7 +26,10 @@
     "testURL": "http://localhost/"
   },
   "devDependencies": {
+    "benchmark": "^2.1.4",
     "coveralls": "^3.0.2",
-    "jest": "^24.1.0"
+    "ejs": "^2.6.1",
+    "jest": "^24.1.0",
+    "microtime": "^3.0.0"
   }
 }
