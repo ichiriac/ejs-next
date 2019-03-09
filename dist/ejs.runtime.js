@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Sat Mar 09 2019 16:16:49 GMT+0100 (CET)
+  // lib/output.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -190,7 +190,7 @@ output.prototype.resolveOutput = function() {
 };
 
 
-// lib/context.js at Sat Mar 09 2019 16:16:49 GMT+0100 (CET)
+// lib/context.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -324,7 +324,7 @@ context.create = function(obj, engine) {
   return new context(obj, engine);
 };
 
-// lib/ejs.js at Sat Mar 09 2019 16:16:49 GMT+0100 (CET)
+// lib/ejs.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -356,7 +356,7 @@ ejs.prototype.compile = function(buffer, filename)  {
   if (!filename) {
     filename = 'eval';
   }
-  var code = compile(new lexer(), buffer, this.options);
+  var code = transpile(new lexer(), buffer, this.options);
   try {
     return new Function(this.options.localsName, code);
   } catch(e) {

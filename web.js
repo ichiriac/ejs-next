@@ -18,7 +18,7 @@ var full = [];
 var runtime = [];
 [
   "lib/lexer.js",
-  "lib/compile.js",
+  "lib/transpile.js",
   "lib/output.js",
   "lib/context.js",
   "lib/ejs.js"
@@ -57,8 +57,8 @@ if (full_min.error) {
   fs.writeFileSync("dist/ejs.runtime.min.js", runtime_min.code);
   /** STATISTICS **/
   var count = (full.match(/^\s*[A-Za-z0-9\}\)\;]+/gm) || []).length;
-  console.log("Uncompressed size : " + Math.round(code.length / 102.4) / 10 + 'Ko');
   console.log("Lines of code     : " + count);
+  console.log("Uncompressed size : " + Math.round(full.length / 102.4) / 10 + 'Ko');
   console.log("Compressed size   : " + Math.round(full_min.code.length / 102.4) / 10 + 'Ko');
   console.log("Runtime comp size : " + Math.round(runtime_min.code.length / 102.4) / 10 + 'Ko');
 }
