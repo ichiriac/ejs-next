@@ -6,4 +6,4 @@ node_js:
 notifications:
   email: false
 script: npm run cover
-after_success: cat /home/travis/build/ichiriac/ejs2/coverage/lcov.info | /home/travis/build/ichiriac/ejs2/node_modules/coveralls/bin/coveralls.js
+after_success: cat /home/travis/build/ichiriac/ejs-next/coverage/lcov.info | /home/travis/build/ichiriac/ejs-next/node_modules/coveralls/bin/coveralls.js
