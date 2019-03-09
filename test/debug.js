@@ -6,37 +6,13 @@
 "use strict";
 const ejs = require('../lib/ejs');
 const ejs1 = require('ejs');
-const tpl = `
-OK, so have fun! :D
--------------------
-<%
-    var fruits = ["Apple", "Pear", "Orange", "Lemon"]
-      , random = " ".repeat(198).split("").map(x => Math.random())
-      ;
-%>
-
-These fruits are amazing:
-<%_ for(var i = 0; i < fruits.length; ++i) { _%>
-
-  - <%= fruits[i] %>s
-<%_ } _%>
-
-Let's see some random numbers:
-
-<% 
-  random.forEach(function(c, i) {
-%> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
-  });
-%>
-
-Hello <%= locals.name %> !
-
-`;
-
-
-ejs.render(tpl, { name: 'World' })
+const tpl = `<%= include('foo.ejs', { name: "John Wick" }) %>`;
+ejs.render(tpl, { name: 'World' }, { root: __dirname })
   .then(function(output) {
     console.log(output);
-    console.log(ejs1.render(tpl));
+    // console.log(ejs1.render(tpl));
+  })
+  .catch(function(err) {
+    console.error(err);
   })
 ;
