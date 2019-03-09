@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
+  // lib/lexer.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -21,6 +21,8 @@ var lexer = function() {
   this.char_output = '=';
   this.char_html = '-';
   this.char_strip = '_';
+  this.char_buffering = '{@';
+  this.char_ignore = '%';
 };
 
 /**
@@ -35,7 +37,8 @@ lexer.tokens = {
   T_OPT_CLEAN_OUTPUT:   5,  // <%=
   T_OPT_OUTPUT:         6,  // <%-
   T_OPT_WS_STRIP:       7,  // <%_ | _%>
-  T_SOURCE:             8,  // if (js...)
+  T_OPT_NL_STRIP:       8,  // -%>
+  T_SOURCE:             9,  // if (js...)
 };
 
 /**
@@ -106,6 +109,9 @@ lexer.prototype.next = function() {
         if (char === this.char_strip) {
           this.offset += this.close_tag.length;
           return this.token(lexer.tokens.T_OPT_WS_STRIP);
+        } else if (char === this.char_html) {
+          this.offset += this.close_tag.length;
+          return this.token(lexer.tokens.T_OPT_NL_STRIP);
         } else {
           this.offset += this.close_tag.length - 1;
           return this.token(lexer.tokens.T_CLOSE);
@@ -117,7 +123,10 @@ lexer.prototype.next = function() {
         this.offset = this.lastOffset;
       } else {
         this.state = lexer.states.S_TAG;
-        if( this.source[this.offset - 1] === this.char_strip) {
+        if (
+          this.source[this.offset - 1] === this.char_strip ||
+          this.source[this.offset - 1] === this.char_html
+        ) {
           this.offset -= 2;
         } else {
           this.offset --;
@@ -133,7 +142,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
+// lib/transpile.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -145,7 +154,7 @@ lexer.prototype.next = function() {
 /**
  * Define the lexer -> token -> code transformations
  */
-var transpile = function(io, buffer, opts) {
+var transpile = function(io, buffer, opts, filename) {
   io.input(buffer);
   var tok, code = '', safeEcho, echo;
   if (opts.strict) {
@@ -153,9 +162,22 @@ var transpile = function(io, buffer, opts) {
     safeEcho = opts.localsName + '.safeEcho(';
     echo = opts.localsName + '.echo(';
   } else {
-    code += "with(" + opts.localsName + ") {\n";
     safeEcho = '\tsafeEcho(';
     echo = '\techo(';
+  }
+  code += 'if (!ejs || typeof ejs.context !== "function") {\n';
+  code += '\t' + opts.localsName + ' = ejs;\n';
+  code += '\tif (typeof window !== "undefined") {\n';
+  code += '\t\tejs = window.ejs;\n';
+  code += '\t} else if (typeof global !== "undefined") {\n';
+  code += '\t\tejs = global.ejs;\n';
+  code += '\t} else {\n';
+  code += '\t\treturn Promise.reject(new Error("EJS module is not loaded"));\n';
+  code += '\t}\n';
+  code += '}\n';
+  code += opts.localsName + ' = ejs.context(' + opts.localsName + ', '+JSON.stringify(opts)+',"'+filename+'");\n';
+  if (!opts.strict) {
+    code += "with(" + opts.localsName + ") {\n";
   }
   tok = io.next();
   while(true) {
@@ -180,24 +202,12 @@ var transpile = function(io, buffer, opts) {
           code += '\t/* ' + tok[1].replace(/\*\//, '') + '*/\n';
           tok = io.next();
         } 
-        var strip = tok[0] === lexer.tokens.T_OPT_WS_STRIP;
-        tok = io.next();
-        if (strip && tok[0] === lexer.tokens.T_INLINE) {
-          // strip spaces on next inline token
-          tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
-        }
       } else if (tok[0] === lexer.tokens.T_OPEN || tok[0] === lexer.tokens.T_OPT_WS_STRIP) {
         // plain JS statement
         tok = io.next();
         if (tok[0] === lexer.tokens.T_SOURCE) {
           code += '\t' + tok[1] + ';\n';
           tok = io.next();
-        }
-        var strip = tok[0] === lexer.tokens.T_OPT_WS_STRIP;
-        tok = io.next();
-        if (strip && tok[0] === lexer.tokens.T_INLINE) {
-          // strip spaces on next inline token
-          tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
         }
       } else {
         // output statement
@@ -211,10 +221,15 @@ var transpile = function(io, buffer, opts) {
           }
           tok = io.next();
         }
-        var strip = tok[0] === lexer.tokens.T_OPT_WS_STRIP;
-        tok = io.next();
-        if (strip && tok[0] === lexer.tokens.T_INLINE) {
+      }
+      var strip = tok[0];
+      tok = io.next();
+      if (tok[0] === lexer.tokens.T_INLINE) {
+        if (strip === lexer.tokens.T_OPT_WS_STRIP) {
           // strip spaces on next inline token
+          tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
+        } else if (strip === lexer.tokens.T_OPT_NL_STRIP) {
+          // @fixme need to check the spec on what to strip ?
           tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
         }
       }
@@ -227,101 +242,38 @@ var transpile = function(io, buffer, opts) {
   code += "return " + opts.localsName + ".resolveOutput();";
   return code;
 };
-// lib/output.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
+// lib/output.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-var output = function() {
+
+
+var output = function(engine, filename) {
   this._buffer = '';
   this._parts = [];
-  this._levels = [];
-};
-
-/**
- * Turn on output buffering
- */
-output.prototype.ob_start = function() {
-  this._levels.push(this._parts.length);
-  return this;
-};
-
-/**
- * Clean (erase) the output buffer and turn off output buffering
- */
-output.prototype.ob_end_clean = function() {
-  if (this._levels.length > 0) {
-    this._parts.splice(this._levels.pop());
+  this._filename = filename;
+  if (engine) {
+    this._engine = engine;
   } else {
-    throw new Error('Bad output level, use ob_start before');
-  }
-  return this;
-};
-
-/**
- * Flush (send) the output buffer and turn off output buffering
- */
-output.prototype.ob_end_flush = function() {
-  if (this._levels.length > 0) {
-    this._levels.pop();
-  } else {
-    throw new Error('Bad output level, use ob_start before');
+    
+    this._engine = new ejs();
   }
 };
 
 /**
- * Clean (erase) the output buffer
+ * Creates a new context
  */
-output.prototype.ob_clean = function() {
-  if (this._levels.length > 0) {
-    this._parts.splice(
-      this._levels[this._levels.length - 1]
-    );
-  } else {
-    throw new Error('Bad output level, use ob_start before');
+output.prototype.push = function(data) {
+  var result = new output(this._engine, this._filename);
+  Object.assign(result, data);
+  for(var k in this) {
+    if (k[0] !== '_' && this.hasOwnProperty(k) && typeof data[k] === undefined) {
+      result[k] = this[k];
+    }
   }
-  return this;
-};
-
-/**
- * Return the contents of the output buffer
- */
-output.prototype.ob_get_contents = function() {
-  if (this._levels.length > 0) {
-    return Promise.all(this._parts.slice(
-      this._levels[this._levels.length - 1]
-    )).then(function(p) {
-      return p.join("");
-    });
-  } else {
-    throw new Error('Bad output level, use ob_start before');
-  }
-};
-
-/**
- * Get current buffer contents and delete current output buffer
- */
-output.prototype.ob_get_clean = function() {
-  var str = this.ob_get_contents();
-  this.ob_end_clean();
-  return str;
-};
-
-/**
- * Flush the output buffer, return it as a string and turn off output buffering
- */
-output.prototype.ob_get_flush = function() {
-  var str = this.ob_get_contents();
-  this._levels.pop();
-  return str;
-};
-
-/**
- * Return the nesting level of the output buffering mechanism
- */
-output.prototype.ob_get_level = function() {
-  return this._levels.length;
+  return result;
 };
 
 /**
@@ -329,7 +281,9 @@ output.prototype.ob_get_level = function() {
  */
 output.prototype.echo = function(data) {
   if (typeof data.then === 'function') {
-    this._parts.push(this._buffer);
+    if (this._buffer.length > 0) {
+      this._parts.push(this._buffer);
+    }
     this._parts.push(data);
     this._buffer = '';
   } else  {
@@ -354,7 +308,7 @@ var escape = {
  */
 output.prototype.safeEcho = function(data) {
   if (typeof data.then === 'function') {
-    this.echo(
+    return this.echo(
       Promise.resolve(data).then(function(text) {
         if (text === null) return null;
         return text.replace(/[&<>'"]/g, function(c) {
@@ -379,17 +333,34 @@ output.prototype.safeEcho = function(data) {
 };
 
 /**
- * Renders the output
+ * Executes an include
  */
-output.prototype.toString = function() {
-  if (this._parts.length === 0) {
-    return this._buffer;
+output.prototype.include = function(filename, vars) {
+  if (filename[0] !== '/') {
+    filename = path.relative(
+      this._engine.options.root,
+      this._engine.resolveInclude(filename, this._filename, false)
+    );
   }
-  if (this._buffer.length > 0) {
-    this._parts.push(this._buffer);
-    this._buffer = '';
+  return this._engine.renderFile(filename, this.push(vars));
+};
+
+/**
+ * Registers a block
+ */
+output.prototype.block = function(name, fn) {
+  if (!this.blocks) {
+    this.blocks = {};
   }
-  return this._parts.join("");
+  if (!this.blocks[name]) {
+    this.blocks[name] = [];
+  }
+  if (fn && typeof fn === 'function') {
+    var result = fn({});
+    this.blocks[name].push(result);
+    return result;
+  }
+  return this.blocks[name];
 };
 
 /**
@@ -411,7 +382,7 @@ output.prototype.resolveOutput = function() {
 };
 
 
-// lib/context.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
+// lib/context.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -419,139 +390,71 @@ output.prototype.resolveOutput = function() {
  */
 
 
-var context = function(initial, engine) {
-  // Expose globals
-  this._state = [{
-    Math: Math,
-    Date: Date
-  }];
-  this._engine = engine;
-  if (initial) {
-    this.push(initial);
-  }
-  this._output = new output(this);
+// remove from proxy scope
+var unscopables = {
+  locals: true,
+  Math: true,
+  Date: true,
+  global: true,
+  window: true,
+  Function: true
 };
-
-/**
- * Injects a list of variables
- */
-context.prototype.push = function(vars) {
-  this._state.push(vars);
-  for(var k in vars) {
-    if (!this.hasOwnProperty(k)) {
-      Object.defineProperty(
-        this, k, {
-          configurable: true,
-          enumerable: true,
-          get: this.get.bind(this, k),
-          set: this.set.bind(this, k)
-        }
-      );
-    }
-  }
-  return this;
-};
-
-/**
- * Removes the state
- */
-context.prototype.pop = function() {
-  this._state.pop();
-  return this;
-};
-
-/**
- * Executes an include
- */
-context.prototype.include = function(filename, vars) {
-  if (typeof vars === 'function') {
-    this.ob_start();
-    vars();
-    vars = {
-      contents: this.ob_get_clean()
-    };
-  }
-  this.push(vars);
-  this.ob_start();
-  this.engine.renderFile(filename, this);
-  this.pop();
-  return this.ob_get_clean();
-};
-
-/**
- * expose output functions
- */
-for(var k in output.prototype) {
-  (function(property) {
-    context.prototype[property] = function() {
-      return this._output[property].apply(this._output, arguments);
-    };
-  })(k);
+for(var k in global || window) {
+  unscopables[k] = true;
 }
-
-/**
- * Sets a value
- */
-context.prototype.set = function(key, value) {
-  this._state[this._state.length - 1][key] = value;
-  return this;
-};
-
-/**
- * Gets a value
- */
-context.prototype.get = function(key) {
-  if (key[0] !== '_' && context.prototype.hasOwnProperty(key)) {
-    return this[key].bind(this);
-  }
-  for(var i = this._state.length - 1; i > -1 ; i--) {
-    if (this._state[i].hasOwnProperty(key)) {
-      return this._state[i][key];
-    }
-  }
-  return null;
-};
-
 /**
  * Basic proxy handler (for native instructions)
  */
 var proxyHandler =  {
   get: function(ctx, prop) {
-    return ctx.get(prop);
+    if (prop === Symbol.unscopables) return unscopables;
+    if (ctx[prop] === undefined) {
+      ctx[prop] = new Proxy({}, proxyHandler);
+    }
+    return ctx[prop];
   },
   set: function(ctx, prop, value) {
-    return ctx.set(prop, value);
+    ctx[prop] = value;
   },
   has: function (ctx, prop) {
-    return prop[0] !== '_' && prop !== 'locals';
+    return !unscopables.hasOwnProperty(prop);
   }
 };
 
 /**
  * Creates a new context instance
  */
-context.create = function(obj, engine) {
-  if (obj instanceof Proxy || obj instanceof context) {
+context = function(obj, engine, filename) {
+  if (obj instanceof Proxy) {
     // bypass (already instanciated)
     return obj;
   }
-  if (engine.options.strict) {
-    var ctx = new output(engine);
-    return Object.assign(ctx, obj);
+  var ctx;
+  if (obj instanceof output) {
+    ctx = obj;
+  } else {
+    ctx = Object.assign(new output(engine, filename), obj);
   }
-  if (typeof Proxy === 'function') {
-    return new Proxy(new context(obj, engine), proxyHandler);
+  if (!engine.options.strict && typeof Proxy === 'function') {
+    for(var i in ctx) {
+      if (typeof ctx[i] === 'function') {
+        ctx[i] = ctx[i].bind(ctx);
+      }
+    }
+    return new Proxy(ctx, proxyHandler);
   }
-  return new context(obj, engine);
+  return ctx;
 };
 
-// lib/ejs.js at Sat Mar 09 2019 16:25:27 GMT+0100 (CET)
+// lib/ejs.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
+
+
 
 
 
@@ -565,7 +468,8 @@ var ejs = function(opts) {
   if (!opts) opts = {};
   this.options = {
     strict: opts.strict || false,
-    localsName: opts.localsName || 'locals' 
+    localsName: opts.localsName || 'locals',
+    root: opts.root || '/'
   };
 };
 
@@ -577,9 +481,9 @@ ejs.prototype.compile = function(buffer, filename)  {
   if (!filename) {
     filename = 'eval';
   }
-  var code = transpile(new lexer(), buffer, this.options);
+  var code = transpile(new lexer(), buffer, this.options, filename);
   try {
-    return new Function(this.options.localsName, code);
+    return new Function('ejs,' + this.options.localsName, code).bind(null, ejs);
   } catch(e) {
     var line = e.lineNumber ? e.lineNumber - 6 : 1;
     var se = new SyntaxError(e.message, filename, line);
@@ -603,7 +507,7 @@ ejs.compile = function(str, options) {
  */
 ejs.prototype.render = function(str, data) {
   return this.compile(str)(
-    context.create(data || {}, this)
+    context(data || {}, this)
   );
 };
 
@@ -617,26 +521,64 @@ ejs.render = function(str, data, options) {
 };
 
 /**
+ * Resolves a path
+ */
+ejs.prototype.resolveInclude = function(filename, from, isDir) {
+  if (!from) {
+    from = this.options.root;
+    isDir = true;
+  }
+  return ejs.resolveInclude(filename, from, isDir);
+};
+
+/**
+ * Resolves a path
+ */
+ejs.resolveInclude = function(filename, from, isDir) {
+  if (from) {
+    if (!isDir) {
+      from = path.dirname(from);
+    }
+    filename = path.resolve(from, filename);
+  }
+  if (!path.extname(filename)) {
+    filename += '.ejs';
+  }
+  return filename;
+};
+
+/**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
 ejs.prototype.renderFile = function(filename, data) {
   var self = this;
   return new Promise(function(resolve, reject) {
+    filename = ejs.resolveInclude(filename, self.options.root, true);
     fs.readFile(filename, function(err, str) {
       if (err) {
         return reject(err);
       }
       try {
-        var fn = self.compile(str, filename);
+        var fn = self.compile(str.toString(), filename);
         fn(
-          context.create(data || {}, this)
+          context(data || {}, self, filename)
         ).then(resolve).catch(reject);
       } catch(e) {
         return reject(e);
       }
     });
   });
+};
+
+/**
+ * Generic context creator
+ */
+ejs.context = function(data, opts, filename) {
+  if (data instanceof output) {
+    return data;
+  }
+  return context(data, new ejs(opts), filename);
 };
 
 /**
@@ -658,6 +600,14 @@ ejs.renderFile = function(filename, data, options) {
  */
 ejs.__express = ejs.renderFile;
 
+/**
+ * Expose it as a global for standalone (serialized ?) functions
+ */
+if (typeof window !== 'undefined') {
+  window.ejs = ejs;
+} else if (typeof global !== 'undefined') {
+  global.ejs = ejs;
+}
 
 
 
