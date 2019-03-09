@@ -24,4 +24,10 @@ describe('Template', () => {
       done();
     }).catch(reject);
   }); 
+  it('Read file', (done, reject) => {
+    ejs.renderFile(__dirname + '/../foo.ejs', { name: 'Foo' }).then(function(output) {
+      expect(output).toMatchSnapshot();
+      done();
+    }).catch(reject);
+  });   
 });

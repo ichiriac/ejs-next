@@ -28,12 +28,13 @@ Let's see some random numbers:
  * Test helper
  */
 function test(name, fn) {
+  console.log("\nStart to test " + name);
   // define benchmark
   var suite = new benchmark.Suite;
-  suite.add('ejs1 - ' + name, function() {
+  suite.add('ejs@1 - ' + name, function() {
     fn(ejs);
   });
-  suite.add('ejs2 - ' + name, function() {
+  suite.add('ejs@2 - ' + name, function() {
     fn(ejs2);
   });
   // add listeners
@@ -41,7 +42,8 @@ function test(name, fn) {
     console.log(String(event.target));
   });
   suite.on('complete', function() {
-    console.log('Fastest is ' + this.filter('fastest').map('name'));
+    console.log('> Fastest is ' + this.filter('fastest').map('name'));
+    console.log("------------------------------------------------");
   });
   // run async
   suite.run();
