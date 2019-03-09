@@ -57,3 +57,11 @@ test('render strict', function(instance) {
 test('render silent', function(instance) {
   instance.render(tpl, null, { strict: false });
 });
+test('render strict (micro)', function(instance) {
+  instance.render('<%= locals.foo ? locals.bar : locals.baz %>', {
+    foo: true,
+    bar: 'bar',
+    baz: null
+  });
+});
+

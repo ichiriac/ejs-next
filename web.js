@@ -14,7 +14,8 @@ var extract = function(file) {
 };
 
 
-var output = [];
+var full = [];
+var runtime = [];
 [
   "lib/lexer.js",
   "lib/compile.js",
@@ -22,26 +23,42 @@ var output = [];
   "lib/context.js",
   "lib/ejs.js"
 ].forEach(function(file) {
-  output.push(extract(file));
-})
+  full.push(extract(file));
+});
+
+[
+  "lib/output.js",
+  "lib/context.js",
+  "lib/ejs.js"
+].forEach(function(file) {
+  runtime.push(extract(file));
+});
+
 
 var code = fs.readFileSync("lib/browser.js").toString();
-code = code.replace(/\/\/ @body/g, output.join(""));
+full = code.replace(/\/\/ @body/g, full.join(""));
+runtime = code.replace(/\/\/ @body/g, runtime.join(""));
 
 // compressed version
 var UglifyJS = require('uglify-js');
-var result = UglifyJS.minify(code, {
+var full_min = UglifyJS.minify(full, {
   mangle: true
 });
-if (result.error) {
-  fs.writeFileSync("dist/ejs.js", code);
-  console.error(result.error);
-} else {
-  fs.writeFileSync("dist/ejs.js", code);
-  fs.writeFileSync("dist/ejs.min.js", result.code);
-  console.log("Uncompressed size : " + Math.round(code.length / 102.4) / 10 + 'Ko');
-  var count = (code.match(/^\s*[A-Za-z0-9\}\)\;]+/gm) || []).length;
-  console.log("Lines of code     : " + count);
-  console.log("Compressed size   : " + Math.round(result.code.length / 102.4) / 10 + 'Ko');
+var runtime_min = UglifyJS.minify(runtime, {
+  mangle: true
+});
 
+if (full_min.error) {
+  console.error(full_min.error);
+} else {
+  fs.writeFileSync("dist/ejs.js", full);
+  fs.writeFileSync("dist/ejs.runtime.js", runtime);
+  fs.writeFileSync("dist/ejs.min.js", full_min.code);
+  fs.writeFileSync("dist/ejs.runtime.min.js", runtime_min.code);
+  /** STATISTICS **/
+  var count = (full.match(/^\s*[A-Za-z0-9\}\)\;]+/gm) || []).length;
+  console.log("Uncompressed size : " + Math.round(code.length / 102.4) / 10 + 'Ko');
+  console.log("Lines of code     : " + count);
+  console.log("Compressed size   : " + Math.round(full_min.code.length / 102.4) / 10 + 'Ko');
+  console.log("Runtime comp size : " + Math.round(runtime_min.code.length / 102.4) / 10 + 'Ko');
 }

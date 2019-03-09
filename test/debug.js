@@ -28,10 +28,13 @@ Let's see some random numbers:
 %> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
   });
 %>
+
+Hello <%= locals.name %> !
+
 `;
 
 
-ejs.render(tpl, { name: 'World' }, { strict: true })
+ejs.render(tpl, { name: 'World' })
   .then(function(output) {
     console.log(output);
     console.log(ejs1.render(tpl));
