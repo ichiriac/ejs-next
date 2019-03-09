@@ -5,14 +5,24 @@
  */
 "use strict";
 const ejs = require('../lib/ejs');
-const ejs1 = require('ejs');
-const tpl = `<%= include('foo.ejs', { name: "John Wick" }) %>`;
-ejs.render(tpl, { name: 'World' }, { root: __dirname })
+const opt = {
+  root: __dirname + '/snapshot/views/'
+};
+
+var fn = ejs.compile('<%= locals.foo ? locals.bar : locals.baz %>');
+fn({
+  foo: true,
+  bar: 'bar',
+  baz: null
+}).then(function(out) {
+  console.log(out)
+});
+/*
+ejs.renderFile('page', null, opt)
   .then(function(output) {
     console.log(output);
-    // console.log(ejs1.render(tpl));
   })
   .catch(function(err) {
     console.error(err);
   })
-;
+;**/
