@@ -31,11 +31,13 @@ function test(name, fn) {
   console.log("\nStart to test " + name);
   // define benchmark
   var suite = new benchmark.Suite;
+  var local1 = {};
   suite.add('ejs@1 - ' + name, function() {
-    fn(ejs);
+    fn(ejs, local1);
   });
+  var local2 = {};
   suite.add('ejs@2 - ' + name, function() {
-    fn(ejs2);
+    fn(ejs2, local2);
   });
   // add listeners
   suite.on('cycle', function(event) {
@@ -53,14 +55,23 @@ function test(name, fn) {
 test('compile', function(instance) {
   instance.compile(tpl);
 });
-test('render strict', function(instance) {
-  instance.render(tpl, null, { strict: true });
+test('render strict', function(instance, local) {
+  if (!local.fn) {
+    local.fn = instance.compile(tpl, {strict: true});
+  }
+  local.fn();
 });
-test('render silent', function(instance) {
-  instance.render(tpl, null, { strict: false });
+test('render silent', function(instance, local) {
+  if (!local.fn) {
+    local.fn = instance.compile(tpl, {strict: false});
+  }
+  local.fn();
 });
-test('render strict (micro)', function(instance) {
-  instance.render('<%= locals.foo ? locals.bar : locals.baz %>', {
+test('render strict (micro)', function(instance, local) {
+  if (!local.fn) {
+    local.fn = instance.compile('<%= locals.foo ? locals.bar : locals.baz %>', {strict: true});
+  }
+  local.fn({
     foo: true,
     bar: 'bar',
     baz: null
