@@ -38,24 +38,24 @@ suite.on('cycle', function(event) {
 });
 suite.on('complete', function() {
   console.log('Fastest is ' + this.filter('fastest').map('name'));
-  // define benchmark
-  var suite2 = new benchmark.Suite;
-  suite2.add('ejs1 - render', function() {
-    ejs.render(tpl);
-  });
-  suite2.add('ejs2 - render', function() {
-    ejs2.render(tpl, null, { strict: true });
-  });
-  // add listeners
-  suite2.on('cycle', function(event) {
-    console.log(String(event.target));
-  });
-  suite2.on('complete', function() {
-    console.log('Fastest is ' + this.filter('fastest').map('name'));
-  });
-  // run async
-  suite2.run({ 'async': true });
 });
 // run async
-suite.run({ 'async': true });
+suite.run();
 
+// define benchmark
+suite = new benchmark.Suite;
+suite.add('ejs1 - render', function() {
+  ejs.render(tpl, null, { strict: true });
+});
+suite.add('ejs2 - render', function() {
+  ejs2.render(tpl, null, { strict: true });
+});
+// add listeners
+suite.on('cycle', function(event) {
+  console.log(String(event.target));
+});
+suite.on('complete', function() {
+  console.log('Fastest is ' + this.filter('fastest').map('name'));
+});
+// run async
+suite.run();

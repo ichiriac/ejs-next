@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sat Mar 09 2019 14:03:13 GMT+0100 (CET)
+  // lib/lexer.js at Sat Mar 09 2019 14:41:26 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -133,7 +133,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/compile.js at Sat Mar 09 2019 14:03:13 GMT+0100 (CET)
+// lib/compile.js at Sat Mar 09 2019 14:41:26 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -145,10 +145,18 @@ lexer.prototype.next = function() {
 /**
  * Define the lexer -> token -> code transformations
  */
-var compile = function compile(io, buffer) {
+var compile = function compile(io, buffer, opts) {
   io.input(buffer);
-  let tok;
-  let code = ["with(context) {"];
+  let tok, code = '', safeEcho, echo;
+  if (opts.strict) {
+    code += '"use strict";\n';
+    safeEcho = 'context.safeEcho(';
+    echo = 'context.echo(';
+  } else {
+    code += "with(context) {\n";
+    safeEcho = '\tsafeEcho(';
+    echo = '\techo(';
+  }
   tok = io.next();
   while(true) {
     if (tok[0] === lexer.tokens.T_INLINE) {
@@ -159,7 +167,7 @@ var compile = function compile(io, buffer) {
         source = source.replace(/[ \t]+$/, '');
       }
       if (source.length > 0) {
-        code.push('echo(`' + source.replace('`', '\\`') + '`);');
+        code += echo + '`' + source.replace('`', '\\`') + '`);\n';
       }
     } else if (tok[0] === lexer.tokens.T_EOF) {
       // no more tokens
@@ -167,10 +175,9 @@ var compile = function compile(io, buffer) {
     } else {
       if (tok[0] === lexer.tokens.T_OPT_COMMENT) {
         // a comment token
-        node.kind = 'comment';
         tok = io.next();
         if (tok[0] === lexer.tokens.T_SOURCE) {
-          code.push('/* ' + tok[1].replace(/\*\//, '') + '*/');
+          code += '\t/* ' + tok[1].replace(/\*\//, '') + '*/\n';
           tok = io.next();
         } 
         let strip = tok[0] === lexer.tokens.T_OPT_WS_STRIP;
@@ -183,7 +190,7 @@ var compile = function compile(io, buffer) {
         // plain JS statement
         tok = io.next();
         if (tok[0] === lexer.tokens.T_SOURCE) {
-          code.push(tok[1] + ';');
+          code += '\t' + tok[1] + ';\n';
           tok = io.next();
         }
         let strip = tok[0] === lexer.tokens.T_OPT_WS_STRIP;
@@ -198,9 +205,9 @@ var compile = function compile(io, buffer) {
         tok = io.next();
         if (tok[0] === lexer.tokens.T_SOURCE) {
           if (clean) {
-            code.push('safeEcho(' + tok[1] + ');');
+            code += safeEcho + tok[1] + ');\n';
           } else {
-            code.push('echo(' + tok[1] + ');');
+            code += echo + tok[1] + ');\n';
           }
           tok = io.next();
         }
@@ -214,10 +221,13 @@ var compile = function compile(io, buffer) {
     }
   }
   // results
-  code.push("\n}\nreturn context.resolveOutput();");
-  return code.join("\n\t");
+  if (!opts.strict) {
+    code += "}\n";
+  }
+  code += "return context.resolveOutput();";
+  return code;
 };
-// lib/output.js at Sat Mar 09 2019 14:03:13 GMT+0100 (CET)
+// lib/output.js at Sat Mar 09 2019 14:41:26 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -363,7 +373,7 @@ output.prototype.resolveOutput = function() {
 };
 
 
-// lib/context.js at Sat Mar 09 2019 14:03:13 GMT+0100 (CET)
+// lib/context.js at Sat Mar 09 2019 14:41:26 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -487,13 +497,13 @@ context.create = function(obj, engine) {
     // bypass (already instanciated)
     return obj;
   }
-  if (typeof Proxy === 'function') {
+  if (!engine.options.strict && typeof Proxy === 'function') {
     return new Proxy(new context(obj, engine), proxyHandler);
   }
   return new context(obj, engine);
 };
 
-// lib/ejs.js at Sat Mar 09 2019 14:03:13 GMT+0100 (CET)
+// lib/ejs.js at Sat Mar 09 2019 14:41:26 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -509,25 +519,22 @@ context.create = function(obj, engine) {
 /**
  * Layer engine constructor
  */
-var ejs = function(options) {};
+var ejs = function(opts) {
+  if (!opts) opts = {};
+  this.options = {
+    strict: opts.strict || false
+  };
+};
 
 /**
  * Compiles a buffer
  * @return Function(any): Promise<string>
  */
 ejs.prototype.compile = function(buffer, filename)  {
-/*  var args = ['sanitize'];
-  var argName = '_in' + Math.round(Math.random() * 1000000);
   if (!filename) {
     filename = 'eval';
   }
-  args.push(argName);*/
-  var code = compile(new lexer(), buffer);
-  /*var code = this.writer.generate(
-    this.parser.parse(buffer, filename), 
-    argName,
-    filename
-  );*/
+  var code = compile(new lexer(), buffer, this.options);
   try {
     return new Function('context', code);
   } catch(e) {
@@ -553,7 +560,7 @@ ejs.compile = function(str, options) {
  */
 ejs.prototype.render = function(str, data) {
   return this.compile(str)(
-    context.create(data || {})
+    context.create(data || {}, this)
   );
 };
 
@@ -580,7 +587,7 @@ ejs.prototype.renderFile = function(filename, data) {
       try {
         var fn = self.compile(str, filename);
         fn(
-          context.create(data || {})
+          context.create(data || {}, this)
         ).then(resolve).catch(reject);
       } catch(e) {
         return reject(e);
