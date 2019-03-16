@@ -55,6 +55,38 @@ Hello \`);
 return foo.resolveOutput();"
 `;
 
+exports[`Transpiler Simple case / strict mode 1`] = `
+"\\"use strict\\";
+if (!ejs || typeof ejs.context !== \\"function\\") {
+	fooBar = ejs;
+	if (typeof window !== \\"undefined\\") {
+		ejs = window.ejs;
+	} else if (typeof global !== \\"undefined\\") {
+		ejs = global.ejs;
+	} else {
+		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	}
+}
+fooBar = ejs.context(fooBar, {\\"strict\\":true,\\"localsName\\":\\"fooBar\\"},\\"undefined\\");
+fooBar.echo(\`
+    <foo> <%%
+    \`);
+	/*  comment */
+fooBar.echo(\`
+\`);
+	 if (foo == \\";
+fooBar.echo(\`\\\\\\"%>\\") { _%>
+      \`);
+fooBar.safeEcho( bar );
+fooBar.echo(\`
+    \`);
+	 } ;
+fooBar.echo(\`
+    </foo>
+    \`);
+return fooBar.resolveOutput();"
+`;
+
 exports[`Transpiler Simple case 1`] = `
 "if (!ejs || typeof ejs.context !== \\"function\\") {
 	foo = ejs;
@@ -69,9 +101,9 @@ exports[`Transpiler Simple case 1`] = `
 foo = ejs.context(foo, {\\"strict\\":false,\\"localsName\\":\\"foo\\"},\\"undefined\\");
 with(foo) {
 	echo(\`
-    <foo> \`);
-	%
-    <%# comment ;
+    <foo> <%%
+    \`);
+	/*  comment */
 	echo(\`
 \`);
 	 if (foo == \\";

@@ -20,6 +20,17 @@ describe('Transpiler', () => {
     `, { strict: false, localsName: 'foo' });
     expect(program).toMatchSnapshot();
   });
+  it('Simple case / strict mode', () => {
+    var program = transpiler(new lexer(), `
+    <foo> <%%
+    <%# comment %>
+    <%_ if (foo == "%>\\"%>") { _%>
+      <%= bar %>
+    <% } %>
+    </foo>
+    `, { strict: true, localsName: 'fooBar' });
+    expect(program).toMatchSnapshot();
+  });
   it('More complex', () => {
     var program = transpiler(new lexer(), `
 OK, so have fun! :D
