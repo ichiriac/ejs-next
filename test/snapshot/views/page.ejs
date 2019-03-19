@@ -1,0 +1,4 @@
+<% var contents = () => {@ %>
+  Hello <%= name %>
+<% @} %>
+<%- include('layout.ejs', { title: 'Hello World', name: 'John Wick' }) %>

@@ -1,5 +1,5 @@
 {
-  "name": "ejs2",
+  "name": "ejs-next",
   "version": "1.0.0",
   "description": "EJS next gen",
   "main": "./lib/ejs.js",
@@ -26,11 +26,11 @@
     "testURL": "http://localhost/"
   },
   "devDependencies": {
+    "benchmark": "^2.1.4",
     "coveralls": "^3.0.2",
-    "jest": "^24.1.0"
-  },
-  "directories": {
-    "lib": "lib",
-    "test": "test"
+    "ejs": "^2.6.1",
+    "jest": "^24.1.0",
+    "microtime": "^3.0.0",
+    "uglify-js": "^3.4.9"
   }
 }

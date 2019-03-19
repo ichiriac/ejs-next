@@ -3,4 +3,62 @@
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-// @todo
+var fs = require('fs');
+var extract = function(file) {
+  var contents = fs.readFileSync(file).toString();
+  contents = "// " + file + " at " + (new Date()).toString() + "\n" + contents;
+  return contents
+    .replace(/var\s[^=]+\s=\srequire\([^\)]+\);/g, '')
+    .replace(/module\.exports[^;]+;/g, '')
+  ;
+};
+
+
+var full = [];
+var runtime = [];
+[
+  "lib/lexer.js",
+  "lib/transpile.js",
+  "lib/output.js",
+  "lib/context.js",
+  "lib/ejs.js"
+].forEach(function(file) {
+  full.push(extract(file));
+});
+
+[
+  "lib/output.js",
+  "lib/context.js",
+  "lib/ejs.js"
+].forEach(function(file) {
+  runtime.push(extract(file));
+});
+
+
+var code = fs.readFileSync("lib/browser.js").toString();
+full = code.replace(/\/\/ @body/g, full.join(""));
+runtime = code.replace(/\/\/ @body/g, runtime.join(""));
+
+// compressed version
+var UglifyJS = require('uglify-js');
+var full_min = UglifyJS.minify(full, {
+  mangle: true
+});
+var runtime_min = UglifyJS.minify(runtime, {
+  mangle: true
+});
+
+if (full_min.error) {
+  console.error(full_min.error);
+} else {
+  fs.writeFileSync("dist/ejs.js", full);
+  fs.writeFileSync("dist/ejs.runtime.js", runtime);
+  fs.writeFileSync("dist/ejs.min.js", full_min.code);
+  fs.writeFileSync("dist/ejs.runtime.min.js", runtime_min.code);
+  /** STATISTICS **/
+  var count = (full.match(/^\s*[A-Za-z0-9\}\)\;]+/gm) || []).length;
+  console.log("Lines of code     : " + count);
+  console.log("Uncompressed size : " + Math.round(full.length / 102.4) / 10 + 'Ko');
+  console.log("Compressed size   : " + Math.round(full_min.code.length / 102.4) / 10 + 'Ko');
+  console.log("Runtime comp size : " + Math.round(runtime_min.code.length / 102.4) / 10 + 'Ko');
+}

@@ -4,14 +4,25 @@
  * @url https://ejs.js.org
  */
 "use strict";
-
 const ejs = require('../lib/ejs');
-ejs.render(`
-  <%_ if (!wat) { _%>
-    ok <%= foo || "<>" %>
-  <%_ } _%>
-`, { name: 'World' })
+const opt = {
+  root: __dirname + '/snapshot/views/'
+};
+
+var fn = ejs.compile('<%%= locals.foo ? locals.bar : locals.baz %>');
+fn({
+  foo: true,
+  bar: 'bar',
+  baz: null
+}).then(function(out) {
+  console.log(out)
+});
+/*
+ejs.renderFile('page', null, opt)
   .then(function(output) {
     console.log(output);
   })
-;
+  .catch(function(err) {
+    console.error(err);
+  })
+;**/

@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - '8'
+  - '9'  
+  - '10'
+notifications:
+  email: false
+script: npm run cover
+after_success: cat /home/travis/build/ichiriac/ejs-next/coverage/lcov.info | /home/travis/build/ichiriac/ejs-next/node_modules/coveralls/bin/coveralls.js

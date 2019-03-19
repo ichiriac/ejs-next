@@ -5,7 +5,7 @@
  */
 "use strict";
 
-const lexer = require('../../lib/parser/lexer');
+const lexer = require('../../lib/lexer');
 
 describe('Lexer', () => {
   it('Simple case', () => {
