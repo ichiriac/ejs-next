@@ -47,6 +47,9 @@ function test(name, fn) {
     console.log('> Fastest is ' + this.filter('fastest').map('name'));
     console.log("------------------------------------------------");
   });
+  suite.on('error', function(e) {
+    console.error(e);
+  });
   // run async
   suite.run();
 }
