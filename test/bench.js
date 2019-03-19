@@ -30,7 +30,7 @@ Let's see some random numbers:
 function test(name, fn) {
   console.log("\nStart to test " + name);
   // define benchmark
-  var suite = new benchmark.Suite;
+  var suite = new benchmark.Suite();
   var local1 = {};
   suite.add('ejs@1 - ' + name, function() {
     fn(ejs, local1);

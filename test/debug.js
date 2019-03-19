@@ -3,19 +3,20 @@
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
+/*jslint node: true */
 "use strict";
-const ejs = require('../lib/ejs');
-const opt = {
+var ejs = require('../lib/ejs');
+var opt = {
   root: __dirname + '/snapshot/views/'
 };
 
-var fn = ejs.compile('<%%= locals.foo ? locals.bar : locals.baz %>');
+var fn = ejs.compile('<%= locals.foo ? locals.bar : locals.baz %>');
 fn({
   foo: true,
   bar: 'bar',
   baz: null
 }).then(function(out) {
-  console.log(out)
+  console.log(out);
 });
 /*
 ejs.renderFile('page', null, opt)
