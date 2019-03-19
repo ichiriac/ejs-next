@@ -28,5 +28,9 @@
   "devDependencies": {
     "coveralls": "^3.0.2",
     "jest": "^24.1.0"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
   }
 }
