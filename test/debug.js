@@ -9,7 +9,15 @@ const opt = {
   root: __dirname + '/snapshot/views/'
 };
 
-var fn = ejs.compile('<%%= locals.foo ? locals.bar : locals.baz %>');
+var fn = ejs.compile(`
+<%= locals.foo ? locals.bar : locals.baz %>
+<foo><%% 
+<%# comment %>
+<%_ if (foo == "%>\\"%>") { _%>
+  <%= bar %>
+<% } %>
+</foo>
+`);
 fn({
   foo: true,
   bar: 'bar',

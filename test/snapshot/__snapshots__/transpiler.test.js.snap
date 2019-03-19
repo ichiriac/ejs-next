@@ -17,40 +17,6 @@ with(foo) {
 OK, so have fun! :D
 -------------------
 \`);
-	
-    var fruits = [\\"Apple\\", \\"Pear\\", \\"Orange\\", \\"Lemon\\"]
-      , random = \\" \\".repeat(198).split(\\"\\").map(x => Math.random())
-      ;
-;
-	echo(\`
-
-These fruits are amazing:
-\`);
-	 for(var i = 0; i < fruits.length; ++i) { ;
-	echo(\`
-  - \`);
-	safeEcho( fruits[i] );
-	echo(\`s
-\`);
-	 } ;
-	echo(\`
-Let's see some random numbers:
-
-\`);
-	 
-  random.forEach(function(c, i) {
-;
-	echo(\` \`);
-	safeEcho( c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") );
-	
-  });
-;
-	echo(\`
-
-Hello \`);
-	safeEcho( locals.name );
-	echo(\` !
-    \`);
 }
 return foo.resolveOutput();"
 `;
@@ -71,19 +37,7 @@ fooBar = ejs.context(fooBar, {\\"strict\\":true,\\"localsName\\":\\"fooBar\\"},\
 fooBar.echo(\`
     <foo> <%%
     \`);
-	/*  comment */
-fooBar.echo(\`
-\`);
-	 if (foo == \\";
-fooBar.echo(\`\\\\\\"%>\\") { _%>
-      \`);
-fooBar.safeEcho( bar );
-fooBar.echo(\`
-    \`);
-	 } ;
-fooBar.echo(\`
-    </foo>
-    \`);
+fooBar.echo(==);
 return fooBar.resolveOutput();"
 `;
 
@@ -103,19 +57,7 @@ with(foo) {
 	echo(\`
     <foo> <%%
     \`);
-	/*  comment */
-	echo(\`
-\`);
-	 if (foo == \\";
-	echo(\`\\\\\\"%>\\") { _%>
-      \`);
-	safeEcho( bar );
-	echo(\`
-    \`);
-	 } ;
-	echo(\`
-    </foo>
-    \`);
+	echo(==);
 }
 return foo.resolveOutput();"
 `;
