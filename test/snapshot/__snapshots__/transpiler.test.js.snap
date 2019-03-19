@@ -37,6 +37,10 @@ fooBar = ejs.context(fooBar, {\\"strict\\":true,\\"localsName\\":\\"fooBar\\"},\
 fooBar.echo(\`
     <foo> <%%
     \`);
+<<<<<<< HEAD
+=======
+fooBar.echo(==);
+>>>>>>> 5702ba235ee915ac2baf679094157d08fbe50d6e
 return fooBar.resolveOutput();"
 `;
 
@@ -56,6 +60,10 @@ with(foo) {
 	echo(\`
     <foo> <%%
     \`);
+<<<<<<< HEAD
+=======
+	echo(==);
+>>>>>>> 5702ba235ee915ac2baf679094157d08fbe50d6e
 }
 return foo.resolveOutput();"
 `;
