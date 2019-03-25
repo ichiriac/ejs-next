@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Transpiler More complex 1`] = `
-"var _$e = [], _e = [], _$a = 0, _$b = 0;
-var _$f = \\"eval\\";
+"var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	foo = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
@@ -10,8 +9,10 @@ if (arguments.length < 2) {
 	ejs = new ejs({\\"strict\\":false,\\"localsName\\":\\"foo\\"});
 }
 foo = foo || {};
-var include = ejs.include.bind(ejs, foo, \\"eval\\");with(foo) {
-	_e[_$b++] = \`
+var include = ejs.include.bind(ejs, foo, \\"eval\\");
+var _$e = ejs.output();
+with(foo) {
+	_$e.echo = \`
 OK, so have fun! :D
 -------------------
 \`;
@@ -19,56 +20,43 @@ OK, so have fun! :D
     var fruits = [\\"Apple\\", \\"Pear\\", \\"Orange\\", \\"Lemon\\"]
       , random = \\" \\".repeat(198).split(\\"\\").map(x => Math.random())
       ;
-;	_e[_$b++] = \`
+;
+	_$e.echo = \`
 
 These fruits are amazing:
 \`;
- for(var i = 0; i < fruits.length; ++i) { ;	_e[_$b++] = \`
+ for(var i = 0; i < fruits.length; ++i) { ;
+	_$e.echo = \`
   - \`;
-	_$e[_$a++] = b; _e[_$b++] =  fruits[i] ;
-	_e[_$b++] = \`s
+	_$e.safe =  fruits[i] ;
+	_$e.echo = \`s
 \`;
- } ;	_e[_$b++] = \`
+ } ;
+	_$e.echo = \`
 Let's see some random numbers:
 
 \`;
  
   random.forEach(function(c, i) {
-;	_e[_$b++] = \` \`;
-	_$e[_$a++] = b; _e[_$b++] =  c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") ;
+;
+	_$e.echo = \` \`;
+	_$e.safe =  c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") ;
 
   });
-;	_e[_$b++] = \`
+;
+	_$e.echo = \`
 
 Hello \`;
-	_$e[_$a++] = b; _e[_$b++] =  locals.name ;
-	_e[_$b++] = \` !
+	_$e.safe =  locals.name ;
+	_$e.echo = \` !
     \`;
 }
-return Promise.all(_e).then(function(parts) {
-	var r = /[&<>'\\"]/g;
-	for(var i = 0; i < _$e.length; i++) {
-		var offset = _$e[i];
-		var str = parts[offset];
-		if (str != null) {
-			parts[offset] = str.replace(r, function(c) {
-				if (c == '&') return '&amp;';
-				if (c == '<') return '&lt;';
-				if (c == '>') return '&gt;';
-				if (c == '\\"') return '&#34;';
-				if (c == \\"'\\") return '&#39;';
-				return c;
-			});
-		}
-	}
-	return parts.join('');
-});
+return _$e.output;
 //@ sourceURL=eval"
 `;
 
 exports[`Transpiler Simple case / strict mode 1`] = `
 "\\"use strict\\";
-var _$e = [], _e = [], _$a = 0, _$b = 0;
 var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	fooBar = ejs;
@@ -77,43 +65,29 @@ if (arguments.length < 2) {
 	ejs = new ejs({\\"strict\\":true,\\"localsName\\":\\"fooBar\\"});
 }
 fooBar = fooBar || {};
-var include = ejs.include.bind(ejs, fooBar, \\"eval\\");	_e[_$b++] = \`
+var include = ejs.include.bind(ejs, fooBar, \\"eval\\");
+var _$e = ejs.output();
+	_$e.echo = \`
     <foo> <%%
     \`;
 	/*  comment */
-	_e[_$b++] = \`
+	_$e.echo = \`
 \`;
- if (foo == \\"%>\\\\\\"%>\\") { ;	_e[_$b++] = \`      \`;
-	_$e[_$a++] = b; _e[_$b++] =  bar ;
-	_e[_$b++] = \`
+ if (foo == \\"%>\\\\\\"%>\\") { ;
+	_$e.echo = \`      \`;
+	_$e.safe =  bar ;
+	_$e.echo = \`
     \`;
- } ;	_e[_$b++] = \`
+ } ;
+	_$e.echo = \`
     </foo>
     \`;
-return Promise.all(_e).then(function(parts) {
-	var r = /[&<>'\\"]/g;
-	for(var i = 0; i < _$e.length; i++) {
-		var offset = _$e[i];
-		var str = parts[offset];
-		if (str != null) {
-			parts[offset] = str.replace(r, function(c) {
-				if (c == '&') return '&amp;';
-				if (c == '<') return '&lt;';
-				if (c == '>') return '&gt;';
-				if (c == '\\"') return '&#34;';
-				if (c == \\"'\\") return '&#39;';
-				return c;
-			});
-		}
-	}
-	return parts.join('');
-});
+return _$e.output;
 //@ sourceURL=eval"
 `;
 
 exports[`Transpiler Simple case 1`] = `
-"var _$e = [], _e = [], _$a = 0, _$b = 0;
-var _$f = \\"eval\\";
+"var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	foo = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
@@ -121,45 +95,31 @@ if (arguments.length < 2) {
 	ejs = new ejs({\\"strict\\":false,\\"localsName\\":\\"foo\\"});
 }
 foo = foo || {};
-var include = ejs.include.bind(ejs, foo, \\"eval\\");with(foo) {
-	_e[_$b++] = \`
+var include = ejs.include.bind(ejs, foo, \\"eval\\");
+var _$e = ejs.output();
+with(foo) {
+	_$e.echo = \`
     <foo> <%%
     \`;
 	/*  comment */
-	_e[_$b++] = \`
+	_$e.echo = \`
 \`;
- if (foo == \\"%>\\\\\\"%>\\") { ;	_e[_$b++] = \`      \`;
-	_$e[_$a++] = b; _e[_$b++] =  bar ;
-	_e[_$b++] = \`
+ if (foo == \\"%>\\\\\\"%>\\") { ;
+	_$e.echo = \`      \`;
+	_$e.safe =  bar ;
+	_$e.echo = \`
     \`;
- } ;	_e[_$b++] = \`
+ } ;
+	_$e.echo = \`
     </foo>
     \`;
 }
-return Promise.all(_e).then(function(parts) {
-	var r = /[&<>'\\"]/g;
-	for(var i = 0; i < _$e.length; i++) {
-		var offset = _$e[i];
-		var str = parts[offset];
-		if (str != null) {
-			parts[offset] = str.replace(r, function(c) {
-				if (c == '&') return '&amp;';
-				if (c == '<') return '&lt;';
-				if (c == '>') return '&gt;';
-				if (c == '\\"') return '&#34;';
-				if (c == \\"'\\") return '&#39;';
-				return c;
-			});
-		}
-	}
-	return parts.join('');
-});
+return _$e.output;
 //@ sourceURL=eval"
 `;
 
 exports[`Transpiler Template with redirected output 1`] = `
 "\\"use strict\\";
-var _$e = [], _e = [], _$a = 0, _$b = 0;
 var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	_ = ejs;
@@ -168,54 +128,22 @@ if (arguments.length < 2) {
 	ejs = new ejs({\\"strict\\":true,\\"localsName\\":\\"_\\"});
 }
 _ = _ || {};
-var include = ejs.include.bind(ejs, _, \\"eval\\");	_e[_$b++] = \`
+var include = ejs.include.bind(ejs, _, \\"eval\\");
+var _$e = ejs.output();
+	_$e.echo = \`
       \`;
-	_e[_$b++] =  include('foo', {
+	_$e.echo =  include('foo', {
           contents: function() {\\"use strict\\";
-var _$e = [], _e = [], _$a = 0, _$b = 0;
-	_e[_$b++] = \`
-            Tara GROS tonkin !!!
+var _$e = ejs.output();
+	_$e.echo = \`
+            Hello world
           \`;
- return Promise.all(_e).then(function(parts) {
-	var r = /[&<>'\\"]/g;
-	for(var i = 0; i < _$e.length; i++) {
-		var offset = _$e[i];
-		var str = parts[offset];
-		if (str != null) {
-			parts[offset] = str.replace(r, function(c) {
-				if (c == '&') return '&amp;';
-				if (c == '<') return '&lt;';
-				if (c == '>') return '&gt;';
-				if (c == '\\"') return '&#34;';
-				if (c == \\"'\\") return '&#39;';
-				return c;
-			});
-		}
-	}
-	return parts.join('');
-});
+ return _$e.output;
 }
         })
       ;
-	_e[_$b++] = \`
+	_$e.echo = \`
     \`;
-return Promise.all(_e).then(function(parts) {
-	var r = /[&<>'\\"]/g;
-	for(var i = 0; i < _$e.length; i++) {
-		var offset = _$e[i];
-		var str = parts[offset];
-		if (str != null) {
-			parts[offset] = str.replace(r, function(c) {
-				if (c == '&') return '&amp;';
-				if (c == '<') return '&lt;';
-				if (c == '>') return '&gt;';
-				if (c == '\\"') return '&#34;';
-				if (c == \\"'\\") return '&#39;';
-				return c;
-			});
-		}
-	}
-	return parts.join('');
-});
+return _$e.output;
 //@ sourceURL=eval"
 `;

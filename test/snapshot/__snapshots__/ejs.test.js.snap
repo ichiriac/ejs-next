@@ -1,6 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Template Read file 1`] = `"Hello Foo"`;
+exports[`Template Read file 1`] = `
+"Hello Foo
+<hr>
+"
+`;
 
 exports[`Template Simple case 1`] = `"Hello World"`;
 

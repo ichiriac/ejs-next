@@ -35,7 +35,7 @@ describe('Transpiler', () => {
     var program = transpiler(new lexer(), `
       <%- include('foo', {
           contents: function() {@ %>
-            Tara GROS tonkin !!!
+            Hello world
           <% @}
         })
       %>

@@ -59,19 +59,29 @@ function test(name, fn) {
 test('compile', function(instance) {
   instance.compile(tpl);
 });
+test('render include', function(instance, local) {
+  if (!local.fn) {
+    local.fn = instance.compile('<%= include("/foo.ejs") %>', { strict: true, root: __dirname });
+  }
+  local.fn({
+    name: "foo"
+  });
+});
 test('render strict', function(instance, local) {
   if (!local.fn) {
     local.fn = instance.compile(tpl, {strict: true});
   }
   local.fn();
 });
+*/
 test('render silent', function(instance, local) {
   if (!local.fn) {
     local.fn = instance.compile(tpl, {strict: false});
   }
   local.fn();
 });
-*/
+
+
 test('render strict (micro)', function(instance, local) {
   if (!local.fn) {
     local.fn = instance.compile('<%= locals.foo ? locals.bar : locals.baz %>', {strict: true});
@@ -82,4 +92,5 @@ test('render strict (micro)', function(instance, local) {
     baz: null
   });
 });
+
 

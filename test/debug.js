@@ -11,13 +11,15 @@ var opt = {
 };
 
 var fn = ejs.compile(`
-<%= locals.foo ? locals.bar : locals.baz %>
+<%= include("/foo.ejs") %>
 `, { strict: true, root: __dirname });
-for(var i = 0; i < 100000; i++) {
+for(var i = 0; i < 10; i++) {
   fn({
     foo: true,
     bar: 'bar',
     baz: null
+  }).then(function(output) {
+    console.log(output);
   });
 }
 /*
