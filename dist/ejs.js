@@ -6,23 +6,24 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
+  // lib/lexer.js at Mon Mar 25 2019 12:02:15 GMT+0100 (GMT+01:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
+/*jslint node: true */
 "use strict";
+
+var char_comment = '#';
+var char_output = '=';
+var char_html = '-';
+var char_strip = '_';
+var char_ignore = '%';
 
 var lexer = function() {
   this.open_tag = '<%';
   this.close_tag = '%>';
-  this.char_comment = '#';
-  this.char_output = '=';
-  this.char_html = '-';
-  this.char_strip = '_';
-  this.char_buffering = '{@';
-  this.char_ignore = '%';
 };
 
 /**
@@ -39,6 +40,8 @@ lexer.tokens = {
   T_OPT_WS_STRIP:       7,  // <%_ | _%>
   T_OPT_NL_STRIP:       8,  // -%>
   T_SOURCE:             9,  // if (js...)
+  T_OPEN_CAPTURE:       10, // {@
+  T_CLOSE_CAPTURE:      11  // @}
 };
 
 /**
@@ -60,6 +63,7 @@ lexer.prototype.input = function(source) {
   this.lastOffset = source.length - 1;
   this.lookupOffset = source.length - 2;
   this.state = lexer.states.S_INLINE;
+  this.current = null;
 };
 
 /**
@@ -67,13 +71,15 @@ lexer.prototype.input = function(source) {
  */
 lexer.prototype.token = function(type) {
   var src = this.prev_offset > this.lastOffset ? null: this.source.substring(this.prev_offset, this.offset + 1);
-  return [type, src, this.prev_offset, this.offset + 1];
+  this.current = [type, src, this.prev_offset, this.offset + 1];
+  return this.current;
 };
 
 /**
  * Lexing the next token
  */
 lexer.prototype.next = function() {
+  var char;
   this.prev_offset = this.offset + 1;
   while(++this.offset < this.lastOffset) {
     if (this.state === lexer.states.S_INLINE) {
@@ -81,58 +87,106 @@ lexer.prototype.next = function() {
       if (this.offset === -1) {
         this.offset = this.lastOffset;
       } else {
+        if (this.source[this.offset + 2] === char_ignore) {
+          continue;
+        }
         this.state = lexer.states.S_TAG;
         this.offset --;
         return this.token(lexer.tokens.T_INLINE);
       }
     } else if (this.state === lexer.states.S_TAG) {
-      var char = this.source[this.offset];
-      if (char === this.open_tag[0]) {
-        this.state = lexer.states.S_SOURCE;
-        this.offset += this.open_tag.length;
-        char = this.source[this.offset];
-        switch(char) {
-          case this.char_comment:
-            return this.token(lexer.tokens.T_OPT_COMMENT);
-          case this.char_output:
-            return this.token(lexer.tokens.T_OPT_CLEAN_OUTPUT);
-          case this.char_html:
-            return this.token(lexer.tokens.T_OPT_OUTPUT);
-          case this.char_strip:
-            return this.token(lexer.tokens.T_OPT_WS_STRIP);
-          default:
-            this.offset--;
-            return this.token(lexer.tokens.T_OPEN);
-        }
-      } else {
-        this.state = lexer.states.S_INLINE;
-        if (char === this.char_strip) {
-          this.offset += this.close_tag.length;
-          return this.token(lexer.tokens.T_OPT_WS_STRIP);
-        } else if (char === this.char_html) {
-          this.offset += this.close_tag.length;
-          return this.token(lexer.tokens.T_OPT_NL_STRIP);
-        } else {
-          this.offset += this.close_tag.length - 1;
-          return this.token(lexer.tokens.T_CLOSE);
-        }
+      char = this.source[this.offset];
+      this.state = lexer.states.S_SOURCE;
+      this.offset += this.open_tag.length;
+      char = this.source[this.offset];
+      if (char == char_output) {
+        return this.token(lexer.tokens.T_OPT_CLEAN_OUTPUT);
+      } else if (char == char_html) {
+        return this.token(lexer.tokens.T_OPT_OUTPUT);
+      } else if (char == char_strip) {
+        return this.token(lexer.tokens.T_OPT_WS_STRIP);
+      } else if (char == char_comment) {
+        return this.token(lexer.tokens.T_OPT_COMMENT);
       }
+      this.offset--;
+      return this.token(lexer.tokens.T_OPEN);
     } else {
-      this.offset = this.source.indexOf(this.close_tag, this.offset);
-      if (this.offset === -1) {
-        this.offset = this.lastOffset;
-      } else {
-        this.state = lexer.states.S_TAG;
-        if (
-          this.source[this.offset - 1] === this.char_strip ||
-          this.source[this.offset - 1] === this.char_html
-        ) {
-          this.offset -= 2;
-        } else {
-          this.offset --;
+      // scan js source code 
+      do {
+        char = this.source[this.offset];
+
+        // scan texts
+        if (char == "'" || char == '"' || char == "`") {
+          while(++this.offset < this.lastOffset) {
+            var c = this.source[this.offset];
+            if (c == "\\") {
+              this.offset++;
+              continue;
+            }
+            if (c == char) break;
+          }
         }
-        return this.token(lexer.tokens.T_SOURCE);
-      }
+
+        // scan comments
+        if (char == '/' && this.source[this.offset + 1] == '*')  {
+          // @fixme handle // and #
+          while(++this.offset < this.lastOffset) {
+            char = this.source[this.offset];
+            if (char == "*" && this.source[this.offset + 1] == '/') {
+              ++this.offset;
+              break;
+            }
+          }
+        }
+
+        // T_OPEN_CAPTURE
+        if (char == '{' && this.source[this.offset + 1] == '@') {
+          if (this.prev_offset == this.offset) {
+            this.offset ++;
+            return this.token(lexer.tokens.T_OPEN_CAPTURE);
+          } else {
+            this.offset --;
+            break;
+          }
+        }
+        
+        // T_CLOSE_CAPTURE
+        if (char == '@' && this.source[this.offset + 1] == '}') {
+          if (this.prev_offset == this.offset) {
+            this.offset ++;
+           return this.token(lexer.tokens.T_CLOSE_CAPTURE);
+          } else {
+            this.offset --;
+            break;
+          }
+        }
+  
+        // close tag
+        if (char == this.close_tag[0]) {
+          if (this.source.substring(this.offset, this.offset + this.close_tag.length) == this.close_tag) {
+            var isStripWs = this.source[this.offset - 1] === char_strip;
+            var isStripHtml = this.source[this.offset - 1] === char_html;
+            if (isStripWs || isStripHtml) {
+              this.offset --;
+            }
+            if (this.prev_offset == this.offset) {
+              this.state = lexer.states.S_INLINE;
+              this.offset += this.close_tag.length;
+              if (isStripWs) {
+                return this.token(lexer.tokens.T_OPT_WS_STRIP);
+              } else if (isStripHtml) {
+                return this.token(lexer.tokens.T_OPT_NL_STRIP);
+              }
+              this.offset --;
+              return this.token(lexer.tokens.T_CLOSE);
+            } else {
+              this.offset --;
+              break;
+            }
+          }
+        }
+      } while(++this.offset < this.lastOffset);
+      return this.token(lexer.tokens.T_SOURCE);
     }
   }
   if (this.prev_offset === this.offset) {
@@ -142,7 +196,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
+// lib/transpile.js at Mon Mar 25 2019 12:02:15 GMT+0100 (GMT+01:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -152,83 +206,112 @@ lexer.prototype.next = function() {
 
 
 /**
- * Define the lexer -> token -> code transformations
+ * Convert tokens to code
+ * @param {*} lex 
  */
-var transpile = function(io, buffer, opts, filename) {
-  io.input(buffer);
-  var tok, code = '', safeEcho, echo;
+var jsCode = function(lex) {
+  var result = '';
+  var tok = lex.next();
+  while(tok[0] != lexer.tokens.T_EOF) {
+    if (tok[0] == lexer.tokens.T_CLOSE) break;
+    if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
+    if (tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
+    result += tok[1];
+    tok = lex.next();
+  }
+  return result;
+};
+
+/**
+ * Parse every token
+ * @param {*} io 
+ * @param {*} opts 
+ */
+var parseTokens = function(io, opts, filename) {
+  var code = '';
+  var safeEcho = '\t_$e[_$a++] = _$b; _e[_$b++] = ';
+  var echo = '\t_e[_$b++] = ';
   if (opts.strict) {
     code += '"use strict";\n';
-    safeEcho = opts.localsName + '.safeEcho(';
-    echo = opts.localsName + '.echo(';
-  } else {
-    safeEcho = '\tsafeEcho(';
-    echo = '\techo(';
   }
-  code += 'if (!ejs || typeof ejs.context !== "function") {\n';
-  code += '\t' + opts.localsName + ' = ejs;\n';
-  code += '\tif (typeof window !== "undefined") {\n';
-  code += '\t\tejs = window.ejs;\n';
-  code += '\t} else if (typeof global !== "undefined") {\n';
-  code += '\t\tejs = global.ejs;\n';
-  code += '\t} else {\n';
-  code += '\t\treturn Promise.reject(new Error("EJS module is not loaded"));\n';
-  code += '\t}\n';
-  code += '}\n';
-  code += opts.localsName + ' = ejs.context(' + opts.localsName + ', '+JSON.stringify(opts)+',"'+filename+'");\n';
+  code += "var _$e = [], _e = [], _$a = 0, _$b = 0;\n";
+  if (filename) {
+    code += 'var _$f = "'+filename+'";\n';
+    code += 'if (arguments.length < 2) {\n';
+    code += '\t' + opts.localsName + ' = ejs;\n';
+    code += '\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n';
+    code += '\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n';
+    code += '\tejs = new ejs('+JSON.stringify(opts)+');\n';
+    code += '}\n';
+    code += opts.localsName + ' = ' + opts.localsName + ' || {};\n';
+    code += 'var include = ejs.include.bind(ejs, '+opts.localsName+', "'+filename+'");\n';  
+  }
   if (!opts.strict) {
     code += "with(" + opts.localsName + ") {\n";
   }
-  tok = io.next();
+  var tok = io.next();
   while(true) {
-    if (tok[0] === lexer.tokens.T_INLINE) {
+    if (tok[0] == lexer.tokens.T_INLINE) {
       // we are inside an html chunk
       var source = tok[1];
       tok = io.next();
-      if (tok[0] === lexer.tokens.T_OPT_WS_STRIP) {
+      if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) {
         source = source.replace(/[ \t]+$/, '');
       }
       if (source.length > 0) {
-        code += echo + '`' + source.replace('`', '\\`') + '`);\n';
+        code += echo + '`' + source.replace('`', '\\`') + '`;\n';
       }
-    } else if (tok[0] === lexer.tokens.T_EOF) {
+    } else if (tok[0] == lexer.tokens.T_EOF) {
       // no more tokens
       break;
+    } else if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) {
+      // end of closure
+      break;
     } else {
-      if (tok[0] === lexer.tokens.T_OPT_COMMENT) {
+      if (tok[0] == lexer.tokens.T_OPT_COMMENT) {
         // a comment token
-        tok = io.next();
-        if (tok[0] === lexer.tokens.T_SOURCE) {
-          code += '\t/* ' + tok[1].replace(/\*\//, '') + '*/\n';
-          tok = io.next();
-        } 
-      } else if (tok[0] === lexer.tokens.T_OPEN || tok[0] === lexer.tokens.T_OPT_WS_STRIP) {
-        // plain JS statement
-        tok = io.next();
-        if (tok[0] === lexer.tokens.T_SOURCE) {
-          code += '\t' + tok[1] + ';\n';
-          tok = io.next();
-        }
+        code += '\t/* ' + jsCode(io) + '*/\n';
       } else {
-        // output statement
-        var clean = tok[0] === lexer.tokens.T_OPT_CLEAN_OUTPUT;
+        var isCode = tok[0] == lexer.tokens.T_OPEN || tok[0] == lexer.tokens.T_OPT_WS_STRIP;
+        var isOutput =  tok[0] == lexer.tokens.T_OPT_OUTPUT;
+        var isClean = tok[0] == lexer.tokens.T_OPT_CLEAN_OUTPUT;
+        var src = '';
         tok = io.next();
-        if (tok[0] === lexer.tokens.T_SOURCE) {
-          if (clean) {
-            code += safeEcho + tok[1] + ');\n';
+        while(tok[0] != lexer.tokens.T_EOF) {
+          if (tok[0] == lexer.tokens.T_CLOSE) break;
+          if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
+          if (tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
+          if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) break;
+          if (tok[0] == lexer.tokens.T_OPEN_CAPTURE) {
+            src += '{';
+            src += parseTokens(io, opts);
+            src += '}';
           } else {
-            code += echo + tok[1] + ');\n';
+            src += tok[1];
           }
           tok = io.next();
         }
+        if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) {
+          code += src;
+          break;
+        }
+        if (isCode) {
+          src += ';\n';
+        } else if (isOutput) {
+          src = echo + src + ';\n';
+        } else if (isClean) {
+          src = safeEcho + src + ';\n';
+        }
+        code += src;
       }
-      var strip = tok[0];
+      
+      var strip = io.current[0];
       tok = io.next();
-      if (tok[0] === lexer.tokens.T_INLINE) {
-        if (strip === lexer.tokens.T_OPT_WS_STRIP) {
+      if (tok[0] == lexer.tokens.T_INLINE) {
+        if (strip == lexer.tokens.T_OPT_WS_STRIP) {
           // strip spaces on next inline token
           tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
-        } else if (strip === lexer.tokens.T_OPT_NL_STRIP) {
+        } else if (strip == lexer.tokens.T_OPT_NL_STRIP) {
           // @fixme need to check the spec on what to strip ?
           tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
         }
@@ -239,223 +322,44 @@ var transpile = function(io, buffer, opts, filename) {
   if (!opts.strict) {
     code += "}\n";
   }
-  code += "return " + opts.localsName + ".resolveOutput();";
+  code += "return Promise.all(_e).then(function(parts) {\n";
+  code += "\tvar r = /[&<>'\"]/g;\n";
+  code += "\tfor(var i = 0; i < _$e.length; i++) {\n";
+  code += "\t\tvar offset = _$e[i];\n";
+  code += "\t\tvar str = parts[offset];\n";
+  code += "\t\tif (str != null) {\n";
+  code += "\t\t\tparts[offset] = str.replace(r, function(c) {\n";
+  code += "\t\t\t\tif (c == '&') return '&amp;';\n";
+  code += "\t\t\t\tif (c == '<') return '&lt;';\n";
+  code += "\t\t\t\tif (c == '>') return '&gt;';\n";
+  code += "\t\t\t\tif (c == '\"') return '&#34;';\n";
+  code += "\t\t\t\tif (c == \"'\") return '&#39;';\n";
+  code += "\t\t\t\treturn c;\n";
+  code += "\t\t\t});\n";
+  code += "\t\t}\n";
+  code += "\t}\n";
+  code += "\treturn parts.join('');\n";
+  code += "});\n";
+  if (filename) {
+    code += '//@ sourceURL=' + filename;
+  }
   return code;
 };
-// lib/output.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
-/**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
- * @url https://ejs.js.org
- */
-
-
-var output = function(engine, filename) {
-  this._buffer = '';
-  this._parts = [];
-  this._filename = filename;
-  if (engine) {
-    this._engine = engine;
-  } else {
-    
-    this._engine = new ejs();
-  }
-};
 
 /**
- * Creates a new context
+ * Define the lexer -> token -> code transformations
  */
-output.prototype.push = function(data) {
-  var result = new output(this._engine, this._filename);
-  Object.assign(result, data);
-  for(var k in this) {
-    if (k[0] !== '_' && this.hasOwnProperty(k) && typeof data[k] === undefined) {
-      result[k] = this[k];
-    }
-  }
-  return result;
+var transpile = function(io, buffer, opts, filename) {
+  io.input(buffer);
+  return parseTokens(io, opts, filename || "eval");
 };
-
-/**
- * Echo function
- */
-output.prototype.echo = function(data) {
-  if (typeof data.then === 'function') {
-    if (this._buffer.length > 0) {
-      this._parts.push(this._buffer);
-    }
-    this._parts.push(data);
-    this._buffer = '';
-  } else  {
-    this._buffer += data;
-  }
-  return this;
-};
-
-/**
- * list of results
- */
-var escape = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&#34;',
-  "'": '&#39;'
-};
-
-/**
- * Clean output function
- */
-output.prototype.safeEcho = function(data) {
-  if (typeof data.then === 'function') {
-    return this.echo(
-      Promise.resolve(data).then(function(text) {
-        if (text === null) return null;
-        return text.replace(/[&<>'"]/g, function(c) {
-          return escape[c];
-        });
-      })
-    );
-  }
-  if (typeof data === 'string') {
-    this.echo(
-      data.replace(/[&<>'"]/g, function(c) {
-        return escape[c];
-      })
-    );
-  } else {
-    this.echo(
-      (new String(data)).replace(/[&<>'"]/g, function(c) {
-        return escape[c];
-      })
-    );
-  }
-};
-
-/**
- * Executes an include
- */
-output.prototype.include = function(filename, vars) {
-  if (filename[0] !== '/') {
-    filename = path.relative(
-      this._engine.options.root,
-      this._engine.resolveInclude(filename, this._filename, false)
-    );
-  }
-  return this._engine.renderFile(filename, this.push(vars));
-};
-
-/**
- * Registers a block
- */
-output.prototype.block = function(name, fn) {
-  if (!this.blocks) {
-    this.blocks = {};
-  }
-  if (!this.blocks[name]) {
-    this.blocks[name] = [];
-  }
-  if (fn && typeof fn === 'function') {
-    var result = fn({});
-    this.blocks[name].push(result);
-    return result;
-  }
-  return this.blocks[name];
-};
-
-/**
- * Resolves the current output
- */
-output.prototype.resolveOutput = function() {
-  if (this._parts.length === 0) {
-    return Promise.resolve(this._buffer);
-  }
-  if (this._buffer.length > 0) {
-    this._parts.push(this._buffer);
-    this._buffer = '';
-  }
-  return Promise.all(this._parts).then(function(p) {
-    this._buffer = p.join("");
-    this._parts = [];
-    return this._buffer;
-  }.bind(this));
-};
-
-
-// lib/context.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
-/**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
- * @url https://ejs.js.org
- */
-
-
-// remove from proxy scope
-var unscopables = {
-  locals: true,
-  Math: true,
-  Date: true,
-  global: true,
-  window: true,
-  Function: true
-};
-for(var k in global || window) {
-  unscopables[k] = true;
-}
-/**
- * Basic proxy handler (for native instructions)
- */
-var proxyHandler =  {
-  get: function(ctx, prop) {
-    if (prop === Symbol.unscopables) return unscopables;
-    if (ctx[prop] === undefined) {
-      ctx[prop] = new Proxy({}, proxyHandler);
-    }
-    return ctx[prop];
-  },
-  set: function(ctx, prop, value) {
-    ctx[prop] = value;
-  },
-  has: function (ctx, prop) {
-    return !unscopables.hasOwnProperty(prop);
-  }
-};
-
-/**
- * Creates a new context instance
- */
-context = function(obj, engine, filename) {
-  if (obj instanceof Proxy) {
-    // bypass (already instanciated)
-    return obj;
-  }
-  var ctx;
-  if (obj instanceof output) {
-    ctx = obj;
-  } else {
-    ctx = Object.assign(new output(engine, filename), obj);
-  }
-  if (!engine.options.strict && typeof Proxy === 'function') {
-    for(var i in ctx) {
-      if (typeof ctx[i] === 'function') {
-        ctx[i] = ctx[i].bind(ctx);
-      }
-    }
-    return new Proxy(ctx, proxyHandler);
-  }
-  return ctx;
-};
-
-// lib/ejs.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
+// lib/ejs.js at Mon Mar 25 2019 12:02:15 GMT+0100 (GMT+01:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
-
-
-
 
 
 
@@ -478,12 +382,9 @@ var ejs = function(opts) {
  * @return Function(any): Promise<string>
  */
 ejs.prototype.compile = function(buffer, filename)  {
-  if (!filename) {
-    filename = 'eval';
-  }
-  var code = transpile(new lexer(), buffer, this.options, filename);
+  var code = transpile(new lexer(), buffer, this.options, filename || "eval");
   try {
-    return new Function('ejs,' + this.options.localsName, code).bind(null, ejs);
+    return new Function('ejs,' + this.options.localsName, code).bind(null, this);
   } catch(e) {
     var line = e.lineNumber ? e.lineNumber - 6 : 1;
     var se = new SyntaxError(e.message, filename, line);
@@ -506,9 +407,7 @@ ejs.compile = function(str, options) {
  * @return Promise<string>
  */
 ejs.prototype.render = function(str, data) {
-  return this.compile(str)(
-    context(data || {}, this)
-  );
+  return this.compile(str)(data);
 };
 
 /**
@@ -518,6 +417,16 @@ ejs.prototype.render = function(str, data) {
 ejs.render = function(str, data, options) {
   var instance = new ejs(options);
   return instance.render(str, data);
+};
+
+/**
+ * Include a file
+ */
+ejs.prototype.include = function(data, from, filename, args) {
+  return this.renderFile(
+    this.resolveInclude(filename, from), 
+    Object.assign({}, data, args)
+  );
 };
 
 /**
@@ -561,24 +470,12 @@ ejs.prototype.renderFile = function(filename, data) {
       }
       try {
         var fn = self.compile(str.toString(), filename);
-        fn(
-          context(data || {}, self, filename)
-        ).then(resolve).catch(reject);
+        fn(data).then(resolve).catch(reject);
       } catch(e) {
         return reject(e);
       }
     });
   });
-};
-
-/**
- * Generic context creator
- */
-ejs.context = function(data, opts, filename) {
-  if (data instanceof output) {
-    return data;
-  }
-  return context(data, new ejs(opts), filename);
 };
 
 /**

@@ -6,220 +6,13 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
-/**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
- * @url https://ejs.js.org
- */
-
-
-var output = function(engine, filename) {
-  this._buffer = '';
-  this._parts = [];
-  this._filename = filename;
-  if (engine) {
-    this._engine = engine;
-  } else {
-    
-    this._engine = new ejs();
-  }
-};
-
-/**
- * Creates a new context
- */
-output.prototype.push = function(data) {
-  var result = new output(this._engine, this._filename);
-  Object.assign(result, data);
-  for(var k in this) {
-    if (k[0] !== '_' && this.hasOwnProperty(k) && typeof data[k] === undefined) {
-      result[k] = this[k];
-    }
-  }
-  return result;
-};
-
-/**
- * Echo function
- */
-output.prototype.echo = function(data) {
-  if (typeof data.then === 'function') {
-    if (this._buffer.length > 0) {
-      this._parts.push(this._buffer);
-    }
-    this._parts.push(data);
-    this._buffer = '';
-  } else  {
-    this._buffer += data;
-  }
-  return this;
-};
-
-/**
- * list of results
- */
-var escape = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&#34;',
-  "'": '&#39;'
-};
-
-/**
- * Clean output function
- */
-output.prototype.safeEcho = function(data) {
-  if (typeof data.then === 'function') {
-    return this.echo(
-      Promise.resolve(data).then(function(text) {
-        if (text === null) return null;
-        return text.replace(/[&<>'"]/g, function(c) {
-          return escape[c];
-        });
-      })
-    );
-  }
-  if (typeof data === 'string') {
-    this.echo(
-      data.replace(/[&<>'"]/g, function(c) {
-        return escape[c];
-      })
-    );
-  } else {
-    this.echo(
-      (new String(data)).replace(/[&<>'"]/g, function(c) {
-        return escape[c];
-      })
-    );
-  }
-};
-
-/**
- * Executes an include
- */
-output.prototype.include = function(filename, vars) {
-  if (filename[0] !== '/') {
-    filename = path.relative(
-      this._engine.options.root,
-      this._engine.resolveInclude(filename, this._filename, false)
-    );
-  }
-  return this._engine.renderFile(filename, this.push(vars));
-};
-
-/**
- * Registers a block
- */
-output.prototype.block = function(name, fn) {
-  if (!this.blocks) {
-    this.blocks = {};
-  }
-  if (!this.blocks[name]) {
-    this.blocks[name] = [];
-  }
-  if (fn && typeof fn === 'function') {
-    var result = fn({});
-    this.blocks[name].push(result);
-    return result;
-  }
-  return this.blocks[name];
-};
-
-/**
- * Resolves the current output
- */
-output.prototype.resolveOutput = function() {
-  if (this._parts.length === 0) {
-    return Promise.resolve(this._buffer);
-  }
-  if (this._buffer.length > 0) {
-    this._parts.push(this._buffer);
-    this._buffer = '';
-  }
-  return Promise.all(this._parts).then(function(p) {
-    this._buffer = p.join("");
-    this._parts = [];
-    return this._buffer;
-  }.bind(this));
-};
-
-
-// lib/context.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
-/**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
- * @url https://ejs.js.org
- */
-
-
-// remove from proxy scope
-var unscopables = {
-  locals: true,
-  Math: true,
-  Date: true,
-  global: true,
-  window: true,
-  Function: true
-};
-for(var k in global || window) {
-  unscopables[k] = true;
-}
-/**
- * Basic proxy handler (for native instructions)
- */
-var proxyHandler =  {
-  get: function(ctx, prop) {
-    if (prop === Symbol.unscopables) return unscopables;
-    if (ctx[prop] === undefined) {
-      ctx[prop] = new Proxy({}, proxyHandler);
-    }
-    return ctx[prop];
-  },
-  set: function(ctx, prop, value) {
-    ctx[prop] = value;
-  },
-  has: function (ctx, prop) {
-    return !unscopables.hasOwnProperty(prop);
-  }
-};
-
-/**
- * Creates a new context instance
- */
-context = function(obj, engine, filename) {
-  if (obj instanceof Proxy) {
-    // bypass (already instanciated)
-    return obj;
-  }
-  var ctx;
-  if (obj instanceof output) {
-    ctx = obj;
-  } else {
-    ctx = Object.assign(new output(engine, filename), obj);
-  }
-  if (!engine.options.strict && typeof Proxy === 'function') {
-    for(var i in ctx) {
-      if (typeof ctx[i] === 'function') {
-        ctx[i] = ctx[i].bind(ctx);
-      }
-    }
-    return new Proxy(ctx, proxyHandler);
-  }
-  return ctx;
-};
-
-// lib/ejs.js at Sat Mar 09 2019 23:26:50 GMT+0100 (CET)
+  // lib/ejs.js at Mon Mar 25 2019 12:02:15 GMT+0100 (GMT+01:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
-
-
-
 
 
 
@@ -242,12 +35,9 @@ var ejs = function(opts) {
  * @return Function(any): Promise<string>
  */
 ejs.prototype.compile = function(buffer, filename)  {
-  if (!filename) {
-    filename = 'eval';
-  }
-  var code = transpile(new lexer(), buffer, this.options, filename);
+  var code = transpile(new lexer(), buffer, this.options, filename || "eval");
   try {
-    return new Function('ejs,' + this.options.localsName, code).bind(null, ejs);
+    return new Function('ejs,' + this.options.localsName, code).bind(null, this);
   } catch(e) {
     var line = e.lineNumber ? e.lineNumber - 6 : 1;
     var se = new SyntaxError(e.message, filename, line);
@@ -270,9 +60,7 @@ ejs.compile = function(str, options) {
  * @return Promise<string>
  */
 ejs.prototype.render = function(str, data) {
-  return this.compile(str)(
-    context(data || {}, this)
-  );
+  return this.compile(str)(data);
 };
 
 /**
@@ -282,6 +70,16 @@ ejs.prototype.render = function(str, data) {
 ejs.render = function(str, data, options) {
   var instance = new ejs(options);
   return instance.render(str, data);
+};
+
+/**
+ * Include a file
+ */
+ejs.prototype.include = function(data, from, filename, args) {
+  return this.renderFile(
+    this.resolveInclude(filename, from), 
+    Object.assign({}, data, args)
+  );
 };
 
 /**
@@ -325,24 +123,12 @@ ejs.prototype.renderFile = function(filename, data) {
       }
       try {
         var fn = self.compile(str.toString(), filename);
-        fn(
-          context(data || {}, self, filename)
-        ).then(resolve).catch(reject);
+        fn(data).then(resolve).catch(reject);
       } catch(e) {
         return reject(e);
       }
     });
   });
-};
-
-/**
- * Generic context creator
- */
-ejs.context = function(data, opts, filename) {
-  if (data instanceof output) {
-    return data;
-  }
-  return context(data, new ejs(opts), filename);
 };
 
 /**

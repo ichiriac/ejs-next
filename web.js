@@ -19,16 +19,12 @@ var runtime = [];
 [
   "lib/lexer.js",
   "lib/transpile.js",
-  "lib/output.js",
-  "lib/context.js",
   "lib/ejs.js"
 ].forEach(function(file) {
   full.push(extract(file));
 });
 
 [
-  "lib/output.js",
-  "lib/context.js",
   "lib/ejs.js"
 ].forEach(function(file) {
   runtime.push(extract(file));
