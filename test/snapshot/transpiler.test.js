@@ -31,6 +31,17 @@ describe('Transpiler', () => {
     `, { strict: true, localsName: 'fooBar' });
     expect(program).toMatchSnapshot();
   });
+  it('Template with redirected output', () => {
+    var program = transpiler(new lexer(), `
+      <%- include('foo', {
+          contents: function() {@ %>
+            Tara GROS tonkin !!!
+          <% @}
+        })
+      %>
+    `, { strict: true, localsName: '_' });
+    expect(program).toMatchSnapshot();
+  });    
   it('More complex', () => {
     var program = transpiler(new lexer(), `
 OK, so have fun! :D

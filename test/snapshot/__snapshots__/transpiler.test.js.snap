@@ -1,119 +1,221 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Transpiler More complex 1`] = `
-"if (!ejs || typeof ejs.context !== \\"function\\") {
+"var _$e = [], _e = [], _$a = 0, _$b = 0;
+var _$f = \\"eval\\";
+if (arguments.length < 2) {
 	foo = ejs;
-	if (typeof window !== \\"undefined\\") {
-		ejs = window.ejs;
-	} else if (typeof global !== \\"undefined\\") {
-		ejs = global.ejs;
-	} else {
-		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
-	}
+	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
+	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	ejs = new ejs({\\"strict\\":false,\\"localsName\\":\\"foo\\"});
 }
-foo = ejs.context(foo || {}, {\\"strict\\":false,\\"localsName\\":\\"foo\\"},\\"undefined\\");
-with(foo) {
-	echo(\`
+foo = foo || {};
+var include = ejs.include.bind(ejs, foo, \\"eval\\");with(foo) {
+	_e[_$b++] = \`
 OK, so have fun! :D
 -------------------
-\`);
-	
+\`;
+
     var fruits = [\\"Apple\\", \\"Pear\\", \\"Orange\\", \\"Lemon\\"]
       , random = \\" \\".repeat(198).split(\\"\\").map(x => Math.random())
       ;
-;
-	echo(\`
+;	_e[_$b++] = \`
 
 These fruits are amazing:
-\`);
-	 for(var i = 0; i < fruits.length; ++i) { ;
-	echo(\`
-  - \`);
-	safeEcho( fruits[i] );
-	echo(\`s
-\`);
-	 } ;
-	echo(\`
+\`;
+ for(var i = 0; i < fruits.length; ++i) { ;	_e[_$b++] = \`
+  - \`;
+	_$e[_$a++] = b; _e[_$b++] =  fruits[i] ;
+	_e[_$b++] = \`s
+\`;
+ } ;	_e[_$b++] = \`
 Let's see some random numbers:
 
-\`);
-	 
+\`;
+ 
   random.forEach(function(c, i) {
-;
-	echo(\` \`);
-	safeEcho( c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") );
-	
-  });
-;
-	echo(\`
+;	_e[_$b++] = \` \`;
+	_$e[_$a++] = b; _e[_$b++] =  c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") ;
 
-Hello \`);
-	safeEcho( locals.name );
-	echo(\` !
-    \`);
+  });
+;	_e[_$b++] = \`
+
+Hello \`;
+	_$e[_$a++] = b; _e[_$b++] =  locals.name ;
+	_e[_$b++] = \` !
+    \`;
 }
-return foo.resolveOutput();"
+return Promise.all(_e).then(function(parts) {
+	var r = /[&<>'\\"]/g;
+	for(var i = 0; i < _$e.length; i++) {
+		var offset = _$e[i];
+		var str = parts[offset];
+		if (str != null) {
+			parts[offset] = str.replace(r, function(c) {
+				if (c == '&') return '&amp;';
+				if (c == '<') return '&lt;';
+				if (c == '>') return '&gt;';
+				if (c == '\\"') return '&#34;';
+				if (c == \\"'\\") return '&#39;';
+				return c;
+			});
+		}
+	}
+	return parts.join('');
+});
+//@ sourceURL=eval"
 `;
 
 exports[`Transpiler Simple case / strict mode 1`] = `
 "\\"use strict\\";
-if (!ejs || typeof ejs.context !== \\"function\\") {
+var _$e = [], _e = [], _$a = 0, _$b = 0;
+var _$f = \\"eval\\";
+if (arguments.length < 2) {
 	fooBar = ejs;
-	if (typeof window !== \\"undefined\\") {
-		ejs = window.ejs;
-	} else if (typeof global !== \\"undefined\\") {
-		ejs = global.ejs;
-	} else {
-		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
-	}
+	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
+	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	ejs = new ejs({\\"strict\\":true,\\"localsName\\":\\"fooBar\\"});
 }
-fooBar = ejs.context(fooBar || {}, {\\"strict\\":true,\\"localsName\\":\\"fooBar\\"},\\"undefined\\");
-fooBar.echo(\`
+fooBar = fooBar || {};
+var include = ejs.include.bind(ejs, fooBar, \\"eval\\");	_e[_$b++] = \`
     <foo> <%%
-    \`);
+    \`;
 	/*  comment */
-fooBar.echo(\`
-\`);
-	 if (foo == \\"%>\\\\\\"%>\\") { ;
-fooBar.echo(\`      \`);
-fooBar.safeEcho( bar );
-fooBar.echo(\`
-    \`);
-	 } ;
-fooBar.echo(\`
+	_e[_$b++] = \`
+\`;
+ if (foo == \\"%>\\\\\\"%>\\") { ;	_e[_$b++] = \`      \`;
+	_$e[_$a++] = b; _e[_$b++] =  bar ;
+	_e[_$b++] = \`
+    \`;
+ } ;	_e[_$b++] = \`
     </foo>
-    \`);
-return fooBar.resolveOutput();"
+    \`;
+return Promise.all(_e).then(function(parts) {
+	var r = /[&<>'\\"]/g;
+	for(var i = 0; i < _$e.length; i++) {
+		var offset = _$e[i];
+		var str = parts[offset];
+		if (str != null) {
+			parts[offset] = str.replace(r, function(c) {
+				if (c == '&') return '&amp;';
+				if (c == '<') return '&lt;';
+				if (c == '>') return '&gt;';
+				if (c == '\\"') return '&#34;';
+				if (c == \\"'\\") return '&#39;';
+				return c;
+			});
+		}
+	}
+	return parts.join('');
+});
+//@ sourceURL=eval"
 `;
 
 exports[`Transpiler Simple case 1`] = `
-"if (!ejs || typeof ejs.context !== \\"function\\") {
+"var _$e = [], _e = [], _$a = 0, _$b = 0;
+var _$f = \\"eval\\";
+if (arguments.length < 2) {
 	foo = ejs;
-	if (typeof window !== \\"undefined\\") {
-		ejs = window.ejs;
-	} else if (typeof global !== \\"undefined\\") {
-		ejs = global.ejs;
-	} else {
-		return Promise.reject(new Error(\\"EJS module is not loaded\\"));
-	}
+	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
+	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	ejs = new ejs({\\"strict\\":false,\\"localsName\\":\\"foo\\"});
 }
-foo = ejs.context(foo || {}, {\\"strict\\":false,\\"localsName\\":\\"foo\\"},\\"undefined\\");
-with(foo) {
-	echo(\`
+foo = foo || {};
+var include = ejs.include.bind(ejs, foo, \\"eval\\");with(foo) {
+	_e[_$b++] = \`
     <foo> <%%
-    \`);
+    \`;
 	/*  comment */
-	echo(\`
-\`);
-	 if (foo == \\"%>\\\\\\"%>\\") { ;
-	echo(\`      \`);
-	safeEcho( bar );
-	echo(\`
-    \`);
-	 } ;
-	echo(\`
+	_e[_$b++] = \`
+\`;
+ if (foo == \\"%>\\\\\\"%>\\") { ;	_e[_$b++] = \`      \`;
+	_$e[_$a++] = b; _e[_$b++] =  bar ;
+	_e[_$b++] = \`
+    \`;
+ } ;	_e[_$b++] = \`
     </foo>
-    \`);
+    \`;
 }
-return foo.resolveOutput();"
+return Promise.all(_e).then(function(parts) {
+	var r = /[&<>'\\"]/g;
+	for(var i = 0; i < _$e.length; i++) {
+		var offset = _$e[i];
+		var str = parts[offset];
+		if (str != null) {
+			parts[offset] = str.replace(r, function(c) {
+				if (c == '&') return '&amp;';
+				if (c == '<') return '&lt;';
+				if (c == '>') return '&gt;';
+				if (c == '\\"') return '&#34;';
+				if (c == \\"'\\") return '&#39;';
+				return c;
+			});
+		}
+	}
+	return parts.join('');
+});
+//@ sourceURL=eval"
+`;
+
+exports[`Transpiler Template with redirected output 1`] = `
+"\\"use strict\\";
+var _$e = [], _e = [], _$a = 0, _$b = 0;
+var _$f = \\"eval\\";
+if (arguments.length < 2) {
+	_ = ejs;
+	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
+	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	ejs = new ejs({\\"strict\\":true,\\"localsName\\":\\"_\\"});
+}
+_ = _ || {};
+var include = ejs.include.bind(ejs, _, \\"eval\\");	_e[_$b++] = \`
+      \`;
+	_e[_$b++] =  include('foo', {
+          contents: function() {\\"use strict\\";
+var _$e = [], _e = [], _$a = 0, _$b = 0;
+	_e[_$b++] = \`
+            Tara GROS tonkin !!!
+          \`;
+ return Promise.all(_e).then(function(parts) {
+	var r = /[&<>'\\"]/g;
+	for(var i = 0; i < _$e.length; i++) {
+		var offset = _$e[i];
+		var str = parts[offset];
+		if (str != null) {
+			parts[offset] = str.replace(r, function(c) {
+				if (c == '&') return '&amp;';
+				if (c == '<') return '&lt;';
+				if (c == '>') return '&gt;';
+				if (c == '\\"') return '&#34;';
+				if (c == \\"'\\") return '&#39;';
+				return c;
+			});
+		}
+	}
+	return parts.join('');
+});
+}
+        })
+      ;
+	_e[_$b++] = \`
+    \`;
+return Promise.all(_e).then(function(parts) {
+	var r = /[&<>'\\"]/g;
+	for(var i = 0; i < _$e.length; i++) {
+		var offset = _$e[i];
+		var str = parts[offset];
+		if (str != null) {
+			parts[offset] = str.replace(r, function(c) {
+				if (c == '&') return '&amp;';
+				if (c == '<') return '&lt;';
+				if (c == '>') return '&gt;';
+				if (c == '\\"') return '&#34;';
+				if (c == \\"'\\") return '&#39;';
+				return c;
+			});
+		}
+	}
+	return parts.join('');
+});
+//@ sourceURL=eval"
 `;
