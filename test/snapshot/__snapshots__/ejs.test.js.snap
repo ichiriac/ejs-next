@@ -3,6 +3,7 @@
 exports[`Template Read file 1`] = `
 "Hello Foo
 <hr>
+
 "
 `;
 
