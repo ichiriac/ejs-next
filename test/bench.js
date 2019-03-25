@@ -54,6 +54,7 @@ function test(name, fn) {
   suite.run();
 }
 
+/*
 // define benchmark
 test('compile', function(instance) {
   instance.compile(tpl);
@@ -70,6 +71,7 @@ test('render silent', function(instance, local) {
   }
   local.fn();
 });
+*/
 test('render strict (micro)', function(instance, local) {
   if (!local.fn) {
     local.fn = instance.compile('<%= locals.foo ? locals.bar : locals.baz %>', {strict: true});

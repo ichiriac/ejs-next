@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/ejs.js at Mon Mar 25 2019 12:02:15 GMT+0100 (GMT+01:00)
+  // lib/ejs.js at Mon Mar 25 2019 12:14:58 GMT+0100 (GMT+01:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors

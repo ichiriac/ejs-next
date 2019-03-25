@@ -11,15 +11,15 @@ var opt = {
 };
 
 var fn = ejs.compile(`
-hello <%= bar %>
-`, { strict: false });
-fn({
-  foo: true,
-  bar: 'bar',
-  baz: null
-}).then(function(out) {
-  console.log(out);
-});
+<%= locals.foo ? locals.bar : locals.baz %>
+`, { strict: true, root: __dirname });
+for(var i = 0; i < 10000000; i++) {
+  fn({
+    foo: true,
+    bar: 'bar',
+    baz: null
+  });
+}
 /*
 ejs.renderFile('page', null, opt)
   .then(function(output) {
