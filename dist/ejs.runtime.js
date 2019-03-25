@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/ejs.js at Mon Mar 25 2019 12:14:58 GMT+0100 (GMT+01:00)
+  // lib/ejs.js at Mon Mar 25 2019 21:57:33 GMT+0100 (CET)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -60,7 +60,114 @@ ejs.compile = function(str, options) {
  * @return Promise<string>
  */
 ejs.prototype.render = function(str, data) {
-  return this.compile(str)(data);
+  var result = this.compile(str)(data);
+  if (typeof result.then == "function") {
+    return result;
+  }
+  return Promise.resolve(result);
+};
+
+/**
+ * 
+ */
+var sanitizeRegex = /[&<>'\"]/g;
+ejs.sanitize = function(str) {
+  if (typeof str != "string") str = str.toString();
+  return str.replace(sanitizeRegex, function(c) {
+    if (c == '&') return '&amp;';
+    if (c == '<') return '&lt;';
+    if (c == '>') return '&gt;';
+    if (c == '"') return '&#34;';
+    if (c == "'") return '&#39;';
+    return c;
+  });
+};
+
+/**
+ * Output serializer
+ */
+ejs.prototype.output = function() {
+  var sanitize = [];
+  var hook = null;
+  var output = [];
+  var offset = -1;
+  var isPromise = true;
+  return new Proxy(output, {
+    get: function(obj, prop) {
+      if (prop == 'output') {
+        var result;
+        if (offset == -1) {
+          result = "";
+        } else if (offset == 0) {
+          result = output[0];
+        } else {
+          result = Promise.all(output).then(function(parts) {
+            for(var i = 0, l = sanitize.length; i < l; i++) {
+              var offset = sanitize[i];
+              parts[offset] = ejs.sanitize(parts[offset] == null ? "": parts[offset]);
+            }
+            return parts.join('');
+          });
+        }
+        if (hook) {
+          if (offset > 0) {
+            return result.then(function(result) {
+              return hook(result);
+            });
+          }
+          return hook(result);
+        }
+        return result;
+      } else if (prop == "toString") {
+        return this.get.bind(this, obj, "output");
+      }
+      return null;
+    },
+    set: function(obj, prop, data) {
+      if (data == null) return true;
+      if (prop == 'echo') {
+        if (typeof data != "string" && typeof data.then != "function") {
+          data = data.toString();
+        }
+        if (typeof data.then == "function") {
+          isPromise = true;
+          offset ++;
+          output.push(data);
+        } else if (isPromise) {
+          output.push(data);
+          isPromise = false;
+          offset++;
+        } else {
+          output[offset] += data;
+        }
+      } else if (prop == "safe") {
+        // safe mode
+        if (typeof data != "string" && typeof data.then != "function") {
+          data = data.toString();
+        }
+        if (typeof data.then === 'function') {
+          isPromise = true;
+          offset ++;
+          sanitize.push(offset);
+          output.push(data);
+        } else if (isPromise) {
+          output.push(ejs.sanitize(data));
+          isPromise = false;
+          offset++;
+        } else {
+          output[offset] += ejs.sanitize(data);
+        }
+      } else if (prop == "hook") {
+        hook = data;
+      } else {
+        throw new Error("Undefined property " + prop);
+      }
+      return true;
+    },
+    toString: function() {
+      return this.get(output, "output");
+    }
+  });
 };
 
 /**
@@ -75,18 +182,48 @@ ejs.render = function(str, data, options) {
 /**
  * Include a file
  */
-ejs.prototype.include = function(data, from, filename, args) {
+ejs.prototype.include = function(ctx, from, filename, args) {
   return this.renderFile(
     this.resolveInclude(filename, from), 
-    Object.assign({}, data, args)
+    Object.assign(ctx, args || {})
   );
+};
+
+/**
+ * Registers a layout output
+ */
+ejs.prototype.layout = function(ctx, from, output, filename, args) {
+  var self = this;
+  output.hook = function(contents) {
+    args.contents = contents;
+    return self.renderFile(
+      self.resolveInclude(filename, from), 
+      Object.assign({}, ctx, args || {})
+    );
+  };
+  return null;
+};
+
+/**
+ * Registers blocks
+ */
+ejs.prototype.block = function(ctx, name, value) {
+  if (!name) return null;
+  if (!ctx[name]) {
+    ctx[name] = this.output();
+  }
+  if (arguments.length == 3) {
+    ctx[name].echo = typeof value == "function" ? value() : value;
+    return value;
+  }
+  return ctx[name].output;
 };
 
 /**
  * Resolves a path
  */
 ejs.prototype.resolveInclude = function(filename, from, isDir) {
-  if (!from) {
+  if (!from || from == 'eval') {
     from = this.options.root;
     isDir = true;
   }
@@ -100,6 +237,9 @@ ejs.resolveInclude = function(filename, from, isDir) {
   if (from) {
     if (!isDir) {
       from = path.dirname(from);
+    }
+    if (filename[0] == '/')  {
+      filename = './' + filename.replace(/^\/*/, '');
     }
     filename = path.resolve(from, filename);
   }
@@ -116,14 +256,21 @@ ejs.resolveInclude = function(filename, from, isDir) {
 ejs.prototype.renderFile = function(filename, data) {
   var self = this;
   return new Promise(function(resolve, reject) {
-    filename = ejs.resolveInclude(filename, self.options.root, true);
+    if (filename.substring(0, self.options.root.length) != self.options.root) {
+      filename = ejs.resolveInclude(filename, self.options.root, true);
+    }
     fs.readFile(filename, function(err, str) {
       if (err) {
         return reject(err);
       }
       try {
         var fn = self.compile(str.toString(), filename);
-        fn(data).then(resolve).catch(reject);
+        var result = fn(data);
+        if (result && typeof result.then == "function") {
+          result.then(resolve).catch(reject);
+        } else {
+          resolve(result);
+        }
       } catch(e) {
         return reject(e);
       }

@@ -11,15 +11,21 @@ var opt = {
 };
 
 var fn = ejs.compile(`
-<%= include("/foo.ejs") %>
-`, { strict: true, root: __dirname });
-for(var i = 0; i < 10; i++) {
+<%_ layout("snapshot/views/layout.ejs", {
+  title: "Hello world"
+}) _%>
+<%- include("/foo.ejs") %>
+<% block('js', '<script src="#1">') %>
+`, { strict: false, root: __dirname });
+for(var i = 0; i < 1; i++) {
   fn({
     foo: true,
     bar: 'bar',
     baz: null
   }).then(function(output) {
     console.log(output);
+  }).catch(function(e) {
+    console.error(e);
   });
 }
 /*
