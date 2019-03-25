@@ -77,6 +77,23 @@ app.engine('ejs',  ejs.renderFile);
 app.set('view engine', 'ejs');
 ```
 
+### IDE Integration with Syntax Highlighting
+
+VSCode:Javascript EJS by *DigitalBrainstem*
+
+## Related projects
+
+There are a number of implementations of EJS:
+
+ * MDE's implementation, the v2 of the library: https://github.com/mde/ejs
+ * TJ's implementation, the v1 of the library: https://github.com/tj/ejs
+ * Jupiter Consulting's EJS: http://www.embeddedjs.com/
+ * EJS Embedded JavaScript Framework on Google Code: https://code.google.com/p/embeddedjavascript/
+ * Sam Stephenson's Ruby implementation: https://rubygems.org/gems/ejs
+ * Erubis, an ERB implementation which also runs JavaScript: http://www.kuwata-lab.com/erubis/users-guide.04.html#lang-javascript
+ * DigitalBrainstem EJS Language support: https://github.com/Digitalbrainstem/ejs-grammar
+
+
 ## License
 
 MIT License - Copyright (c) 2019 Ioan CHIRIAC
