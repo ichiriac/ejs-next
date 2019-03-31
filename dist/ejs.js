@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+  // lib/lexer.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -259,7 +259,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+// lib/transpile.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -351,6 +351,18 @@ generator.prototype.sourcemap = function() {
 generator.prototype.next = function() {
   this.tok = this.lexer.next();
   this.source += this.tok[1];
+  if (this.tok[1] == '{') {
+    this.inObject = true;
+  }
+  if (this.tok[1] == '}') {
+    this.inObject = false;
+  }
+  if (this.tok[1] == ':') {
+    this.inKey = true;
+  } else {
+    this.inKey = false;
+  }
+
   return this;
 };
 
@@ -537,11 +549,21 @@ generator.prototype.parseBody = function(escape) {
             continue;
           } else {
             var varname = this.tok[1];
-            if (this.nextTok().tok[0] === lexer.tokens.T_DBL_COLON) {
+            this.nextTok();
+            if (this.inObject && this.inKey) {
               this.write(varname);
             } else {
               if (!this.isReserved(varname)) {
-                this.write(this.opts.localsName + '.' + varname);
+                if (!this.opts.strict) {
+                  varname = varname.split('.');
+                  var code = this.opts.localsName;
+                  for(var i = 0; i < varname.length; i++) {
+                    code = '(' + code + '.' + varname[i] + ' || "")';
+                  }
+                  this.write(code);
+                } else {
+                  this.write(this.opts.localsName + '.' + varname);
+                }
               } else {
                 this.write(varname);
               }
@@ -549,6 +571,7 @@ generator.prototype.parseBody = function(escape) {
             continue;
           }
         } else {
+
           this.write();
         }
         this.nextTok();
@@ -581,7 +604,7 @@ var transpile = function(io, buffer, opts, filename) {
   var out = new generator(io, opts, filename || "eval");
   return out.toString();
 };
-// lib/output.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+// lib/output.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -621,8 +644,8 @@ output.sanitize = function(str) {
  */
 output.prototype.write = function(msg) {
   if (msg == null) return;
-  var isString = typeof msg != "string";
-  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+  var isString = typeof msg == "string";
+  if (!isString && typeof msg.then != "function") {
     msg = msg.toString();
     isString = true;
   }
@@ -646,8 +669,8 @@ output.prototype.write = function(msg) {
  */ 
 output.prototype.safe_write = function(msg) {
   if (msg == null) return;
-  var isString = typeof msg != "string";
-  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+  var isString = typeof msg == "string";
+  if (!isString && typeof msg.then != "function") {
     msg = msg.toString();
     isString = true;
   }
@@ -696,7 +719,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+// lib/ejs.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors

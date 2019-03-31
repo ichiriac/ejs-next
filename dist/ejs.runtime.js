@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+  // lib/output.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -46,8 +46,8 @@ output.sanitize = function(str) {
  */
 output.prototype.write = function(msg) {
   if (msg == null) return;
-  var isString = typeof msg != "string";
-  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+  var isString = typeof msg == "string";
+  if (!isString && typeof msg.then != "function") {
     msg = msg.toString();
     isString = true;
   }
@@ -71,8 +71,8 @@ output.prototype.write = function(msg) {
  */ 
 output.prototype.safe_write = function(msg) {
   if (msg == null) return;
-  var isString = typeof msg != "string";
-  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+  var isString = typeof msg == "string";
+  if (!isString && typeof msg.then != "function") {
     msg = msg.toString();
     isString = true;
   }
@@ -121,7 +121,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+// lib/ejs.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
