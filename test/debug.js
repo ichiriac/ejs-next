@@ -10,7 +10,7 @@ var opt = {
   root: __dirname + '/snapshot/views/'
 };
 
-var fn = ejs.compile(`<%= locals.foo ? locals.bar : locals.baz %>`, { strict: false, root: __dirname });
+var fn = ejs.compile(`<%= foo ? foo.bar.baz : baz %>`, { strict: false, root: __dirname });
 for(var i = 0; i < 1; i++) {
   Promise.resolve(
     fn({
@@ -24,12 +24,3 @@ for(var i = 0; i < 1; i++) {
     console.error(e);
   });
 }
-/*
-ejs.renderFile('page', null, opt)
-  .then(function(output) {
-    console.log(output);
-  })
-  .catch(function(err) {
-    console.error(err);
-  })
-;**/

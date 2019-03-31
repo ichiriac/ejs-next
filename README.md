@@ -31,7 +31,7 @@ The syntax is the same as classic EJS, with the introduction of a little new con
 ```ejs
 <html>
 ... <%- include('foo.ejs', {
-      inner: (name) => {@
+      inner: function(name) => {@
         %>
           Hello <%= name %>
         <%
