@@ -42,7 +42,7 @@ _$e.safe_write( c.toFixed(10) + (( i+ 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") );
 ;_$e.write(\`
 
 Hello \`);
-_$e.safe_write(  foo.locals.name);
+_$e.safe_write(  ((foo.locals || \\"\\").name || \\"\\"));
 _$e.write(\` !
     \`);
 ;
@@ -100,7 +100,7 @@ _$e.write(\`
 _$e.write(\`
 \`);
   if( foo== \\"%>\\\\\\"%>\\") { ;_$e.write(\`      \`);
-_$e.safe_write(  foo.bar);
+_$e.safe_write(  (foo.bar || \\"\\"));
 _$e.write(\`
     \`);
  } ;_$e.write(\`
