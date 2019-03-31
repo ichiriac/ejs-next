@@ -1,4 +1,4 @@
-Hello <%= name %>
+Hello <%= locals.name %>
 <hr>
-<%= contents ? contents("FooBar !!") : null %>
-<% block('js', '<script src="#2">') %>
+<%= locals.contents ? locals.contents("FooBar !!") : null %>
+<% locals.block ? block('js', '<script src="#2">') : null %>
