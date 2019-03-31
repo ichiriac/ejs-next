@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Transpiler More complex 1`] = `
-"var _$f = \\"eval\\";
-if (arguments.length < 2) {
+"if (arguments.length < 2) {
 	foo = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
 	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
@@ -10,56 +9,49 @@ if (arguments.length < 2) {
 }
 foo = foo || {};
 var include = ejs.include.bind(ejs, foo, \\"eval\\");
+var block = ejs.block.bind(ejs, foo);
 var _$e = ejs.output();
 var layout = ejs.layout.bind(ejs, foo, \\"eval\\", _$e);
-var block = ejs.block.bind(ejs, foo);
-with(foo) {
-	_$e.echo = \`
+_$e.write(\`
 OK, so have fun! :D
 -------------------
-\`;
+\`);
 
     var fruits = [\\"Apple\\", \\"Pear\\", \\"Orange\\", \\"Lemon\\"]
       , random = \\" \\".repeat(198).split(\\"\\").map(x => Math.random())
       ;
-;
-	_$e.echo = \`
+;_$e.write(\`
 
 These fruits are amazing:
-\`;
- for(var i = 0; i < fruits.length; ++i) { ;
-	_$e.echo = \`
-  - \`;
-	_$e.safe =  fruits[i] ;
-	_$e.echo = \`s
-\`;
- } ;
-	_$e.echo = \`
+\`);
+ for(var i = 0;  i< fruits.length; ++i) { ;_$e.write(\`
+  - \`);
+_$e.safe_write( fruits[i] );
+_$e.write(\`s
+\`);
+ } ;_$e.write(\`
 Let's see some random numbers:
 
-\`;
+\`);
  
   random.forEach(function(c, i) {
-;
-	_$e.echo = \` \`;
-	_$e.safe =  c.toFixed(10) + ((i + 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") ;
+;_$e.write(\` \`);
+_$e.safe_write( c.toFixed(10) + (( i+ 1) % 6 === 0 ? \\"\\\\n\\": \\"\\") );
 
   });
-;
-	_$e.echo = \`
+;_$e.write(\`
 
-Hello \`;
-	_$e.safe =  locals.name ;
-	_$e.echo = \` !
-    \`;
-}
-return _$e.output;
-//@ sourceURL=eval"
+Hello \`);
+_$e.safe_write(  foo.locals.name);
+_$e.write(\` !
+    \`);
+;
+return _$e.toString();
+"
 `;
 
 exports[`Transpiler Simple case / strict mode 1`] = `
 "\\"use strict\\";
-var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	fooBar = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
@@ -68,31 +60,29 @@ if (arguments.length < 2) {
 }
 fooBar = fooBar || {};
 var include = ejs.include.bind(ejs, fooBar, \\"eval\\");
+var block = ejs.block.bind(ejs, fooBar);
 var _$e = ejs.output();
 var layout = ejs.layout.bind(ejs, fooBar, \\"eval\\", _$e);
-var block = ejs.block.bind(ejs, fooBar);
-	_$e.echo = \`
+_$e.write(\`
     <foo> <%%
-    \`;
-	/*  comment */
-	_$e.echo = \`
-\`;
- if (foo == \\"%>\\\\\\"%>\\") { ;
-	_$e.echo = \`      \`;
-	_$e.safe =  bar ;
-	_$e.echo = \`
-    \`;
- } ;
-	_$e.echo = \`
+    \`);
+/* <%# comment %> */
+_$e.write(\`
+\`);
+  if( fooBar.foo== \\"%>\\\\\\"%>\\") { ;_$e.write(\`      \`);
+_$e.safe_write(  fooBar.bar);
+_$e.write(\`
+    \`);
+ } ;_$e.write(\`
     </foo>
-    \`;
-return _$e.output;
-//@ sourceURL=eval"
+    \`);
+
+return _$e.toString();
+"
 `;
 
 exports[`Transpiler Simple case 1`] = `
-"var _$f = \\"eval\\";
-if (arguments.length < 2) {
+"if (arguments.length < 2) {
 	foo = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
 	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
@@ -100,33 +90,29 @@ if (arguments.length < 2) {
 }
 foo = foo || {};
 var include = ejs.include.bind(ejs, foo, \\"eval\\");
+var block = ejs.block.bind(ejs, foo);
 var _$e = ejs.output();
 var layout = ejs.layout.bind(ejs, foo, \\"eval\\", _$e);
-var block = ejs.block.bind(ejs, foo);
-with(foo) {
-	_$e.echo = \`
+_$e.write(\`
     <foo> <%%
-    \`;
-	/*  comment */
-	_$e.echo = \`
-\`;
- if (foo == \\"%>\\\\\\"%>\\") { ;
-	_$e.echo = \`      \`;
-	_$e.safe =  bar ;
-	_$e.echo = \`
-    \`;
- } ;
-	_$e.echo = \`
+    \`);
+/* <%# comment %> */
+_$e.write(\`
+\`);
+  if( foo== \\"%>\\\\\\"%>\\") { ;_$e.write(\`      \`);
+_$e.safe_write(  foo.bar);
+_$e.write(\`
+    \`);
+ } ;_$e.write(\`
     </foo>
-    \`;
-}
-return _$e.output;
-//@ sourceURL=eval"
+    \`);
+
+return _$e.toString();
+"
 `;
 
 exports[`Transpiler Template with redirected output 1`] = `
 "\\"use strict\\";
-var _$f = \\"eval\\";
 if (arguments.length < 2) {
 	_ = ejs;
 	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
@@ -135,23 +121,24 @@ if (arguments.length < 2) {
 }
 _ = _ || {};
 var include = ejs.include.bind(ejs, _, \\"eval\\");
+var block = ejs.block.bind(ejs, _);
 var _$e = ejs.output();
 var layout = ejs.layout.bind(ejs, _, \\"eval\\", _$e);
-var block = ejs.block.bind(ejs, _);
-	_$e.echo = \`
-      \`;
-	_$e.echo =  include('foo', {
-          contents: function() {\\"use strict\\";
+_$e.write(\`
+      \`);
+_$e.write( include('foo', {
+          contents: function() {
 var _$e = ejs.output();
-	_$e.echo = \`
+ %>
             Hello world
-          \`;
- return _$e.output;
+          <% 
+return _$e.toString();
 }
-        })
-      ;
-	_$e.echo = \`
-    \`;
-return _$e.output;
-//@ sourceURL=eval"
+        )
+      );
+_$e.write(\`
+    \`);
+
+return _$e.toString();
+"
 `;
