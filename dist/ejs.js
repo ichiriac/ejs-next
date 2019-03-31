@@ -6,24 +6,22 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Mon Mar 25 2019 21:57:33 GMT+0100 (CET)
+  // lib/lexer.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-/*jslint node: true */
 "use strict";
-
-var char_comment = '#';
-var char_output = '=';
-var char_html = '-';
-var char_strip = '_';
-var char_ignore = '%';
 
 var lexer = function() {
   this.open_tag = '<%';
   this.close_tag = '%>';
+  this.char_comment = '#';
+  this.char_output = '=';
+  this.char_html = '-';
+  this.char_strip = '_';
+  this.char_ignore = '%';
 };
 
 /**
@@ -40,8 +38,17 @@ lexer.tokens = {
   T_OPT_WS_STRIP:       7,  // <%_ | _%>
   T_OPT_NL_STRIP:       8,  // -%>
   T_SOURCE:             9,  // if (js...)
-  T_OPEN_CAPTURE:       10, // {@
-  T_CLOSE_CAPTURE:      11  // @}
+  T_WHITESPACE:         10, // ' ' || \t || \r || \n 
+  T_TEXT:               11, // "..." || '...' || `...` 
+  T_COMMENT:            12, // /* ... */ 
+  T_IDENTIFIER:         13, // [A-Za-z][A-Za-z0-9]*
+  T_OPEN_BRACKET:       14, 
+  T_CLOSE_BRACKET:      15,
+  T_OPEN_PARA:          16,
+  T_CLOSE_PARA:         17,
+  T_DBL_COLON:          18,
+  T_OPEN_CAPTURE:       19, // {@
+  T_CLOSE_CAPTURE:      20  // @}
 };
 
 /**
@@ -87,7 +94,7 @@ lexer.prototype.next = function() {
       if (this.offset === -1) {
         this.offset = this.lastOffset;
       } else {
-        if (this.source[this.offset + 2] === char_ignore) {
+        if (this.source[this.offset + 2] === this.char_ignore) {
           continue;
         }
         this.state = lexer.states.S_TAG;
@@ -96,76 +103,123 @@ lexer.prototype.next = function() {
       }
     } else if (this.state === lexer.states.S_TAG) {
       char = this.source[this.offset];
-      this.state = lexer.states.S_SOURCE;
-      this.offset += this.open_tag.length;
-      char = this.source[this.offset];
-      if (char == char_output) {
-        return this.token(lexer.tokens.T_OPT_CLEAN_OUTPUT);
-      } else if (char == char_html) {
-        return this.token(lexer.tokens.T_OPT_OUTPUT);
-      } else if (char == char_strip) {
-        return this.token(lexer.tokens.T_OPT_WS_STRIP);
-      } else if (char == char_comment) {
-        return this.token(lexer.tokens.T_OPT_COMMENT);
+      if (char === this.open_tag[0]) {
+        this.state = lexer.states.S_SOURCE;
+        this.offset += this.open_tag.length;
+        char = this.source[this.offset];
+        switch(char) {
+          case this.char_comment:
+            this.state = lexer.states.S_INLINE;
+            this.offset = this.source.indexOf(this.close_tag, this.offset);
+            if (this.offset == -1) {
+              this.offset = this.lastOffset;
+            } else this.offset += this.close_tag.length - 1;
+            return this.token(lexer.tokens.T_OPT_COMMENT);
+          case this.char_output:
+            return this.token(lexer.tokens.T_OPT_CLEAN_OUTPUT);
+          case this.char_html:
+            return this.token(lexer.tokens.T_OPT_OUTPUT);
+          case this.char_strip:
+            return this.token(lexer.tokens.T_OPT_WS_STRIP);
+          default:
+            this.offset--;
+            return this.token(lexer.tokens.T_OPEN);
+        }
+      } else {
+        this.state = lexer.states.S_INLINE;
+        if (char === this.char_strip) {
+          this.offset += this.close_tag.length;
+          return this.token(lexer.tokens.T_OPT_WS_STRIP);
+        } else if (char === this.char_html) {
+          this.offset += this.close_tag.length;
+          return this.token(lexer.tokens.T_OPT_NL_STRIP);
+        } else {
+          this.offset += this.close_tag.length - 1;
+          return this.token(lexer.tokens.T_CLOSE);
+        }
       }
-      this.offset--;
-      return this.token(lexer.tokens.T_OPEN);
     } else {
-      // scan js source code 
+      char = this.source[this.offset];
+      // scan white space
+      if (char == " " || char == "\n" || char == "\t" || char == "\r") {
+        while(++this.offset < this.lastOffset) {
+          char = this.source[this.offset];
+          if (char != " " && char != "\n" && char != "\t" && char != "\r") {
+            this.offset--;
+            break;
+          }
+        }
+        return this.token(lexer.tokens.T_WHITESPACE);
+      }
+      // scan texts
+      if (char == "'" || char == '"' || char == "`") {
+        while(++this.offset < this.lastOffset) {
+          var c = this.source[this.offset];
+          if (c == "\\") {
+            this.offset++;
+            continue;
+          }
+          if (c == char) break;
+        }
+        return this.token(lexer.tokens.T_TEXT);
+      }
+      // scan comments
+      if (char == '/' && this.source[this.offset + 1] == '*')  {
+        // @fixme handle // and #
+        while(++this.offset < this.lastOffset) {
+          char = this.source[this.offset];
+          if (char == "*" && this.source[this.offset + 1] == '/') {
+            ++this.offset;
+            break;
+          }
+        }
+        return this.token(lexer.tokens.T_COMMENT);
+      }
+      // detect identifier
+      if ((char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char == "_" || char == "$") {
+        while(++this.offset < this.lastOffset) {
+          char = this.source[this.offset];
+          if (char >= "a" && char <= "z") continue;
+          if (char >= "A" && char <= "Z") continue;
+          if (char >= "0" && char <= "9") continue;
+          if (char == "_" || char == "$" || char == ".") continue;
+          this.offset--;
+          break;
+        }
+        if (this.source[this.offset] != "_" || this.prev_offset < this.offset) {
+          return this.token(lexer.tokens.T_IDENTIFIER);
+        }
+      }
+      // detect symbols
+      if (char == "(") return this.token(lexer.tokens.T_OPEN_PARA);
+      if (char == ")") return this.token(lexer.tokens.T_CLOSE_PARA);
+      if (char == "{") {
+        if (this.source[this.offset + 1] == '@') {
+          this.offset++;
+          return this.token(lexer.tokens.T_OPEN_CAPTURE);
+        }
+        return this.token(lexer.tokens.T_OPEN_BRACKET);
+      }
+      if (char == "@") {
+        if (this.source[this.offset + 1] == '}') {
+          this.offset++;
+          return this.token(lexer.tokens.T_CLOSE_CAPTURE);
+        }
+      }
+      if (char == "}") {
+        return this.token(lexer.tokens.T_CLOSE_BRACKET);
+      }
+      if (char == ":") return this.token(lexer.tokens.T_DBL_COLON);
+      if (char == ",") return this.token(lexer.tokens.T_SOURCE);
+      if (char == ";") return this.token(lexer.tokens.T_SOURCE);
+      if (char == "=") return this.token(lexer.tokens.T_SOURCE);
+      // INNER CODES
       do {
         char = this.source[this.offset];
-
-        // scan texts
-        if (char == "'" || char == '"' || char == "`") {
-          while(++this.offset < this.lastOffset) {
-            var c = this.source[this.offset];
-            if (c == "\\") {
-              this.offset++;
-              continue;
-            }
-            if (c == char) break;
-          }
-        }
-
-        // scan comments
-        if (char == '/' && this.source[this.offset + 1] == '*')  {
-          // @fixme handle // and #
-          while(++this.offset < this.lastOffset) {
-            char = this.source[this.offset];
-            if (char == "*" && this.source[this.offset + 1] == '/') {
-              ++this.offset;
-              break;
-            }
-          }
-        }
-
-        // T_OPEN_CAPTURE
-        if (char == '{' && this.source[this.offset + 1] == '@') {
-          if (this.prev_offset == this.offset) {
-            this.offset ++;
-            return this.token(lexer.tokens.T_OPEN_CAPTURE);
-          } else {
-            this.offset --;
-            break;
-          }
-        }
-        
-        // T_CLOSE_CAPTURE
-        if (char == '@' && this.source[this.offset + 1] == '}') {
-          if (this.prev_offset == this.offset) {
-            this.offset ++;
-           return this.token(lexer.tokens.T_CLOSE_CAPTURE);
-          } else {
-            this.offset --;
-            break;
-          }
-        }
-  
-        // close tag
         if (char == this.close_tag[0]) {
           if (this.source.substring(this.offset, this.offset + this.close_tag.length) == this.close_tag) {
-            var isStripWs = this.source[this.offset - 1] === char_strip;
-            var isStripHtml = this.source[this.offset - 1] === char_html;
+            var isStripWs = this.source[this.offset - 1] == this.char_strip;
+            var isStripHtml = this.source[this.offset - 1] == this.char_html;
             if (isStripWs || isStripHtml) {
               this.offset --;
             }
@@ -181,11 +235,20 @@ lexer.prototype.next = function() {
               return this.token(lexer.tokens.T_CLOSE);
             } else {
               this.offset --;
-              break;
+              return this.token(lexer.tokens.T_SOURCE);
             }
           }
         }
+        if ((char == this.char_strip || char == this.char_html) && this.source[this.offset + 1] == this.close_tag[0]) continue;
+        if (char == ' ' || char == "\t" || char == "\r" || char == "\n") break;
+        if (char >= 'a' && char <= "z") break;
+        if (char >= 'A' && char <= "Z") break;
+        if (char == '_' || char == "$") break;
+        if (char == '(' || char == ")") break;
+        if (char == '"' || char == "'" || char == '`') break;
+        if (char == '{' || char == "}" || char == ':' || char == '@' || char == '=' || char == ';' || char == ',') break;
       } while(++this.offset < this.lastOffset);
+      this.offset --;
       return this.token(lexer.tokens.T_SOURCE);
     }
   }
@@ -196,7 +259,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Mon Mar 25 2019 21:57:33 GMT+0100 (CET)
+// lib/transpile.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -206,131 +269,308 @@ lexer.prototype.next = function() {
 
 
 /**
- * Convert tokens to code
- * @param {*} lex 
+ * List of reserved keywords in javascript
  */
-var jsCode = function(lex) {
-  var result = '';
-  var tok = lex.next();
-  while(tok[0] != lexer.tokens.T_EOF) {
-    if (tok[0] == lexer.tokens.T_CLOSE) break;
-    if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
-    if (tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
-    result += tok[1];
-    tok = lex.next();
-  }
-  return result;
+var reserved = {
+  'abstract': true,     'else': true,         'instanceof': true,   'super': true,
+  'boolean': true,      'enum': true,         'int': true,          'switch': true,
+  'break': true,        'export': true,       'interface': true,    'synchronized': true,
+  'byte': true,         'extends': true,      'let': true,          'this': true,
+  'case': true,         'false': true,        'long': true,         'throw': true,
+  'catch': true,        'final': true,        'native': true,       'throws': true,
+  'char': true,         'finally': true,      'new': true,          'transient': true,
+  'class': true,        'float': true,        'null': true,         'true': true,
+  'const': true,        'for': true,          'package': true,      'try': true,
+  'continue': true,     'function': true,     'private': true,      'typeof': true,
+  'debugger': true,     'goto': true,         'protected': true,    'var': true,
+  'default': true,      'if': true,           'public': true,       'void': true,
+  'delete': true,       'implements': true,   'return': true,       'volatile': true,
+  'do': true,           'import': true,       'short': true,        'while': true,
+  'double': true,       'in': true,           'static': true,       'with': true,
+  /** Framework related objects (& globals) **/
+  'layout': true,       'include': true,      'block': true,        'Math': true,
+  'Array': true,        'Object': true,       'String': true,       'Function': true,
+  'Date': true,         'require': true,      'window': true,       'document': true,
+  '$': true,            'module': true
 };
 
 /**
- * Parse every token
- * @param {*} io 
- * @param {*} opts 
+ * Creates a generator
  */
-var parseTokens = function(io, opts, filename) {
-  var code = '';
-  var safeEcho = '\t_$e.safe = ';
-  var echo = '\t_$e.echo = ';
+var generator = function(lexer, opts, filename) {
+  this.code = '';
+  this.source = '';
+  this.source_offset = 0;
+  this.lexer = lexer;
+  this.locals = [{}];
+  this.mappings = [];
+  this.filename = filename;
+  this.names = [];
+  this.useInclude = false;
+  this.useLayout = false;
+  this.useBlock = false;
+  this.opts = opts;
   if (opts.strict) {
-    code += '"use strict";\n';
+    this.write('"use strict";\n');
   }
-  if (filename) {
-    code += 'var _$f = "'+filename+'";\n';
-    code += 'if (arguments.length < 2) {\n';
-    code += '\t' + opts.localsName + ' = ejs;\n';
-    code += '\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n';
-    code += '\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n';
-    code += '\tejs = new ejs('+JSON.stringify(opts)+');\n';
-    code += '}\n';
-    code += opts.localsName + ' = ' + opts.localsName + ' || {};\n';
-    code += 'var include = ejs.include.bind(ejs, '+opts.localsName+', "'+filename+'");\n';  
+  this.write('if (arguments.length < 2) {\n');
+  this.write('\t' + opts.localsName + ' = ejs;\n');
+  this.write('\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n');
+  this.write('\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n');
+  this.write('\tejs = new ejs('+JSON.stringify(opts)+');\n');
+  this.write('}\n');
+  this.write(opts.localsName + ' = ' + opts.localsName + ' || {};\n');
+  this.write('var include = ejs.include.bind(ejs, '+opts.localsName+', "'+filename+'");\n');  
+  this.write('var block = ejs.block.bind(ejs, '+opts.localsName+');\n');  
+  this.write('var _$e = ejs.output();\n');  
+  this.write('var layout = ejs.layout.bind(ejs, '+opts.localsName+', "'+filename+'", _$e);\n');  
+  this.setLocalVar(opts.localsName);
+  this.next().parseBody();
+  this.write('\nreturn _$e.toString();\n');
+};
+
+/**
+ * Generate the sourcemap
+ */
+generator.prototype.sourcemap = function() {
+  var data = {
+    "version": 3,
+    "sources": [this.filename],
+    "names": this.names,
+    "mappings": ";;;;;;;;;;;;AAAA",
+    "file":this.filename,
+    "sourcesContent":this.source
+  };
+  var buff = new Buffer(JSON.stringify(data));
+  return "//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
+};
+
+/**
+ * Reads the next token
+ */
+generator.prototype.next = function() {
+  this.tok = this.lexer.next();
+  this.source += this.tok[1];
+  return this;
+};
+
+/**
+ * Reads the next token, strips comments or white spaces
+ */
+generator.prototype.nextTok = function() {
+  this.next();
+  while (this.tok[0] == lexer.tokens.T_WHITESPACE  || this.tok[0] == lexer.tokens.T_COMMENT) {
+    this.write().next();
+    if (this.tok[0] == lexer.tokens.T_EOF) break;
   }
-  code += 'var _$e = ejs.output();\n';  
-  if (filename) {
-    code += 'var layout = ejs.layout.bind(ejs, '+opts.localsName+', "'+filename+'", _$e);\n';  
-    code += 'var block = ejs.block.bind(ejs, '+opts.localsName+');\n';  
+  return this;
+};
+
+/**
+ * Writing the output
+ */
+generator.prototype.write = function(code) {
+  if (!code) code = this.tok[1];
+  if (this.source_offset != this.source.length) {
+    this.mappings.push(
+      [this.source_offset, this.code.length]
+    );
+    this.source_offset = this.source.length;
   }
-  if (!opts.strict) {
-    code += "with(" + opts.localsName + ") {\n";
+  this.code += code;
+  return this;
+};
+
+/**
+ * Renders the output
+ */
+generator.prototype.toString = function() {
+  if (this.opts.debug) {
+    return this.code + "\n" + this.sourcemap();
   }
-  var tok = io.next();
+  return this.code;
+};
+
+/**
+ * Check if a local var is used
+ */
+generator.prototype.isReserved = function(name) {
+  name = name.split('.', 2)[0];
+  if (reserved[name]) return true;
+  for(var i = this.locals.length - 1; i > -1; i--) {
+    if (this.locals[i][name]) return true;
+  }
+  return false;
+};
+
+/**
+ * Sets a local varname
+ */
+generator.prototype.setLocalVar = function(name) {
+  if (!name) name = this.tok[1];
+  this.locals[this.locals.length - 1][name] = true;
+  return this;
+}
+
+/**
+ *
+ */
+generator.prototype.parseValue = function(stop) {
+  while(this.tok[0] != lexer.tokens.T_EOF) {
+    if (this.tok[1] == stop) return this;
+    if (this.tok[1] == '(') {
+      this.write().nextTok().parseValue(')');
+    }
+    if (this.tok[1] == '{') {
+      this.write().nextTok().parseValue('}');
+    }
+    if (this.tok[1] == '[') {
+      this.write().nextTok().parseValue(']');
+    }
+    if (this.tok[1] == 'function') {
+      this.write().nextTok().parseFunction();
+    }
+    if (!stop && (this.tok[1] == ';' || this.tok[1] == ',')) return this;
+    this.write().nextTok();
+  }
+  return this;
+};
+
+/**
+ * Parsing a variable
+ */
+generator.prototype.parseVar = function() {
+  if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
+    this.setLocalVar().write().nextTok();
+  }
+  if (this.tok[1] == '=') {
+    // read var contents
+    this.write().nextTok().parseValue();
+  }
+  if (this.tok[1] == ',') {
+    // next var
+    this.write().nextTok().parseVar();
+  }
+  if (this.tok[1] == ';') {
+    return this.write().nextTok();
+  }
+};
+
+/**
+ * Parsing a closure structure
+ */
+generator.prototype.parseFunction = function() {
+  if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
+    this.setLocalVar().write().nextTok();
+  }
+  this.locals.push({});
+  if (this.tok[0] == lexer.tokens.T_OPEN_PARA) this.write() && this.nextTok();
+  if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
+    this.setLocalVar().write().nextTok();
+  }
+  while(this.tok[1] == ',') {
+    this.write().nextTok();
+    if (this.tok[0] == lexer.tokens.T_CLOSE_PARA) {
+      break;
+    }
+    this.setLocalVar().write().nextTok();
+  }
+  if (this.tok[0] == lexer.tokens.T_CLOSE_PARA) this.write().nextTok();
+  if (this.tok[0] == lexer.tokens.T_OPEN_CAPTURE) {
+    this.write("{\nvar _$e = ejs.output();\n"); 
+    this.nextTok().parseBody(lexer.tokens.T_CLOSE_CAPTURE);
+    this.write("\nreturn _$e.toString();\n}");
+    if (this.tok[0] == lexer.tokens.T_CLOSE_CAPTURE) this.nextTok();
+  } else {
+    if (this.tok[0] == lexer.tokens.OPEN_BRACKET) this.write().nextTok();
+    this.parseBody(lexer.tokens.CLOSE_BRACKET);
+    if (this.tok[0] == lexer.tokens.CLOSE_BRACKET) this.write().nextTok();
+  }
+  this.locals.pop();
+};
+
+/**
+ * Iterate over tokens
+ */
+generator.prototype.parseBody = function(escape) {
   while(true) {
-    if (tok[0] == lexer.tokens.T_INLINE) {
+    if (this.tok[0] == lexer.tokens.T_INLINE) {
       // we are inside an html chunk
-      var source = tok[1];
-      tok = io.next();
-      if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) {
+      var source = this.tok[1];
+      if (this.next().tok[0] == lexer.tokens.T_OPT_WS_STRIP) {
         source = source.replace(/[ \t]+$/, '');
       }
       if (source.length > 0) {
-        code += echo + '`' + source.replace('`', '\\`') + '`;\n';
+        this.write('_$e.write(`' + source.replace('`', '\\`') + '`);\n');
       }
-    } else if (tok[0] == lexer.tokens.T_EOF) {
+    } else if (this.tok[0] == lexer.tokens.T_EOF || this.tok[0] == escape) {
       // no more tokens
       break;
-    } else if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) {
-      // end of closure
-      break;
-    } else {
-      if (tok[0] == lexer.tokens.T_OPT_COMMENT) {
-        // a comment token
-        code += '\t/* ' + jsCode(io) + '*/\n';
+    } else if (this.tok[0] == lexer.tokens.T_OPT_COMMENT) {
+      // comments
+      this.write('/* ' + this.tok[1].replace('/', '?') + ' */\n').next();
+    } else {      
+      // inner code block
+      var out = false;
+      if (this.tok[0] == lexer.tokens.T_OPT_OUTPUT) {
+        this.write('_$e.write(');
+        out = true;
+      } else if (this.tok[0] == lexer.tokens.T_OPT_CLEAN_OUTPUT) {
+        this.write('_$e.safe_write(');
+        out = true;
+      } else if (this.tok[0] == lexer.tokens.T_OPEN || this.tok[0] == lexer.tokens.T_OPT_WS_STRIP) {
+        out = false;
       } else {
-        var isCode = tok[0] == lexer.tokens.T_OPEN || tok[0] == lexer.tokens.T_OPT_WS_STRIP;
-        var isOutput =  tok[0] == lexer.tokens.T_OPT_OUTPUT;
-        var isClean = tok[0] == lexer.tokens.T_OPT_CLEAN_OUTPUT;
-        var src = '';
-        tok = io.next();
-        while(tok[0] != lexer.tokens.T_EOF) {
-          if (tok[0] == lexer.tokens.T_CLOSE) break;
-          if (tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
-          if (tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
-          if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) break;
-          if (tok[0] == lexer.tokens.T_OPEN_CAPTURE) {
-            src += '{';
-            src += parseTokens(io, opts);
-            src += '}';
-          } else {
-            src += tok[1];
-          }
-          tok = io.next();
-        }
-        if (tok[0] == lexer.tokens.T_CLOSE_CAPTURE) {
-          code += src;
-          break;
-        }
-        if (isCode) {
-          src += ';\n';
-        } else if (isOutput) {
-          src = echo + src + ';\n';
-        } else if (isClean) {
-          src = safeEcho + src + ';\n';
-        }
-        code += src;
+        this.write();
       }
-      
-      var strip = io.current[0];
-      tok = io.next();
-      if (tok[0] == lexer.tokens.T_INLINE) {
+      this.nextTok();
+      while(this.tok[0] != lexer.tokens.T_EOF) {
+        if (this.tok[0] == lexer.tokens.T_CLOSE) break;
+        if (this.tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
+        if (this.tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
+        if (this.tok[0] == escape) return this;
+        if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
+          if (this.tok[1] == 'function') {
+            this.write().nextTok().parseFunction();
+          } else if (this.tok[1] == 'var' || this.tok[1] == 'let' || this.tok[1] == 'const') {
+            this.write('var').nextTok().parseVar();
+            continue;
+          } else {
+            var varname = this.tok[1];
+            if (this.nextTok().tok[0] === lexer.tokens.T_DBL_COLON) {
+              this.write(varname);
+            } else {
+              if (!this.isReserved(varname)) {
+                this.write(this.opts.localsName + '.' + varname);
+              } else {
+                this.write(varname);
+              }
+            }
+            continue;
+          }
+        } else {
+          this.write();
+        }
+        this.nextTok();
+      }
+      if (out) {
+        this.write(');\n');
+      } else {
+        this.write(';');
+      }
+      var strip = this.tok[0];
+      if (this.next().tok[0] == lexer.tokens.T_INLINE) {
         if (strip == lexer.tokens.T_OPT_WS_STRIP) {
           // strip spaces on next inline token
-          tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
+          this.tok[1] = this.tok[1].replace(/^[ \t]*\n?/, '');
         } else if (strip == lexer.tokens.T_OPT_NL_STRIP) {
           // @fixme need to check the spec on what to strip ?
-          tok[1] = tok[1].replace(/^[ \t]*\n?/, '');
+          this.tok[1] = this.tok[1].replace(/^[ \t]*\n?/, '');
         }
       }
     }
   }
-  // results
-  if (!opts.strict) {
-    code += "}\n";
-  }
-  code += "return _$e.output;\n";
-  if (filename) {
-    code += '//@ sourceURL=' + filename;
-  }
-  return code;
+  return this;
 };
 
 /**
@@ -338,15 +578,131 @@ var parseTokens = function(io, opts, filename) {
  */
 var transpile = function(io, buffer, opts, filename) {
   io.input(buffer);
-  return parseTokens(io, opts, filename || "eval");
+  var out = new generator(io, opts, filename || "eval");
+  return out.toString();
 };
-// lib/ejs.js at Mon Mar 25 2019 21:57:33 GMT+0100 (CET)
+// lib/output.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
+
+/**
+ * Output handler
+ */
+var output = function() {
+  this.hook = null;
+  this.output = [];
+  this.offset = -1;
+  this.sanitize = [];
+  this.isPromise = true;
+};
+
+/**
+ * Sanitize the string
+ */
+var sanitizeRegex = /[&<>'\"]/g;
+output.sanitize = function(str) {
+  if (typeof str != "string") str = str.toString();
+  return str.replace(sanitizeRegex, function(c) {
+    if (c == '&') return '&amp;';
+    if (c == '<') return '&lt;';
+    if (c == '>') return '&gt;';
+    if (c == '"') return '&#34;';
+    if (c == "'") return '&#39;';
+    return c;
+  });
+};
+
+/**
+ * Outputs a string
+ */
+output.prototype.write = function(msg) {
+  if (msg == null) return;
+  var isString = typeof msg != "string";
+  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+    msg = msg.toString();
+    isString = true;
+  }
+  if (isString) {
+    if (this.isPromise) {
+      this.output.push(msg);
+      this.isPromise = false;
+      this.offset++;
+    } else {
+      this.output[this.offset] += msg;
+    }
+  } else {
+    this.isPromise = true;
+    this.offset ++;
+    this.output.push(msg);
+  }
+};
+
+/**
+ * safe mode
+ */ 
+output.prototype.safe_write = function(msg) {
+  if (msg == null) return;
+  var isString = typeof msg != "string";
+  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+    msg = msg.toString();
+    isString = true;
+  }
+  if (isString) {
+    if (this.isPromise) {
+      this.output.push(output.sanitize(msg));
+      this.isPromise = false;
+      this.offset++;
+    } else {
+      this.output[this.offset] += output.sanitize(msg);
+    }  
+  } else {
+    this.isPromise = true;
+    this.offset ++;
+    this.sanitize.push(this.offset);
+    this.output.push(msg);
+  }
+};
+
+/**
+ * Renders the output
+ */
+output.prototype.toString = function() {
+  var result;
+  if (this.offset == -1) {
+    result = "";
+  } else if (this.offset == 0) {
+    result = this.output[0];
+  } else {
+    result = Promise.all(this.output).then(function(parts) {
+      for(var i = 0, l = this.sanitize.length; i < l; i++) {
+        var offset = this.sanitize[i];
+        parts[offset] = output.sanitize(parts[offset] == null ? "": parts[offset]);
+      }
+      return parts.join('');
+    }.bind(this));
+  }
+  if (this.hook) {
+    if (result.then) {
+      return result.then(function(result) {
+        return this.hook(result);
+      }.bind(this));
+    }
+    result = this.hook(result);
+  }
+  return result;  
+};
+
+// lib/ejs.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+/**
+ * Copyright (C) 2019 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * @url https://ejs.js.org
+ */
+
 
 
 
@@ -402,106 +758,10 @@ ejs.prototype.render = function(str, data) {
 };
 
 /**
- * 
- */
-var sanitizeRegex = /[&<>'\"]/g;
-ejs.sanitize = function(str) {
-  if (typeof str != "string") str = str.toString();
-  return str.replace(sanitizeRegex, function(c) {
-    if (c == '&') return '&amp;';
-    if (c == '<') return '&lt;';
-    if (c == '>') return '&gt;';
-    if (c == '"') return '&#34;';
-    if (c == "'") return '&#39;';
-    return c;
-  });
-};
-
-/**
  * Output serializer
  */
 ejs.prototype.output = function() {
-  var sanitize = [];
-  var hook = null;
-  var output = [];
-  var offset = -1;
-  var isPromise = true;
-  return new Proxy(output, {
-    get: function(obj, prop) {
-      if (prop == 'output') {
-        var result;
-        if (offset == -1) {
-          result = "";
-        } else if (offset == 0) {
-          result = output[0];
-        } else {
-          result = Promise.all(output).then(function(parts) {
-            for(var i = 0, l = sanitize.length; i < l; i++) {
-              var offset = sanitize[i];
-              parts[offset] = ejs.sanitize(parts[offset] == null ? "": parts[offset]);
-            }
-            return parts.join('');
-          });
-        }
-        if (hook) {
-          if (offset > 0) {
-            return result.then(function(result) {
-              return hook(result);
-            });
-          }
-          return hook(result);
-        }
-        return result;
-      } else if (prop == "toString") {
-        return this.get.bind(this, obj, "output");
-      }
-      return null;
-    },
-    set: function(obj, prop, data) {
-      if (data == null) return true;
-      if (prop == 'echo') {
-        if (typeof data != "string" && typeof data.then != "function") {
-          data = data.toString();
-        }
-        if (typeof data.then == "function") {
-          isPromise = true;
-          offset ++;
-          output.push(data);
-        } else if (isPromise) {
-          output.push(data);
-          isPromise = false;
-          offset++;
-        } else {
-          output[offset] += data;
-        }
-      } else if (prop == "safe") {
-        // safe mode
-        if (typeof data != "string" && typeof data.then != "function") {
-          data = data.toString();
-        }
-        if (typeof data.then === 'function') {
-          isPromise = true;
-          offset ++;
-          sanitize.push(offset);
-          output.push(data);
-        } else if (isPromise) {
-          output.push(ejs.sanitize(data));
-          isPromise = false;
-          offset++;
-        } else {
-          output[offset] += ejs.sanitize(data);
-        }
-      } else if (prop == "hook") {
-        hook = data;
-      } else {
-        throw new Error("Undefined property " + prop);
-      }
-      return true;
-    },
-    toString: function() {
-      return this.get(output, "output");
-    }
-  });
+  return new output();
 };
 
 /**
@@ -529,10 +789,11 @@ ejs.prototype.include = function(ctx, from, filename, args) {
 ejs.prototype.layout = function(ctx, from, output, filename, args) {
   var self = this;
   output.hook = function(contents) {
+    args = Object.assign({}, ctx, args || {});
     args.contents = contents;
     return self.renderFile(
       self.resolveInclude(filename, from), 
-      Object.assign({}, ctx, args || {})
+      args      
     );
   };
   return null;
@@ -561,6 +822,11 @@ ejs.prototype.resolveInclude = function(filename, from, isDir) {
     from = this.options.root;
     isDir = true;
   }
+  if (filename[0] == '/')  {
+    filename = './' + filename.replace(/^\/*/, '');
+    from = this.options.root;
+    isDir = true;
+  }  
   return ejs.resolveInclude(filename, from, isDir);
 };
 
@@ -571,9 +837,6 @@ ejs.resolveInclude = function(filename, from, isDir) {
   if (from) {
     if (!isDir) {
       from = path.dirname(from);
-    }
-    if (filename[0] == '/')  {
-      filename = './' + filename.replace(/^\/*/, '');
     }
     filename = path.resolve(from, filename);
   }

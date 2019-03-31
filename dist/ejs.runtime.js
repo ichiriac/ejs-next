@@ -6,13 +6,128 @@
 (function($, w) {
   "use strict";
   
-  // lib/ejs.js at Mon Mar 25 2019 21:57:33 GMT+0100 (CET)
+  // lib/output.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
+
+/**
+ * Output handler
+ */
+var output = function() {
+  this.hook = null;
+  this.output = [];
+  this.offset = -1;
+  this.sanitize = [];
+  this.isPromise = true;
+};
+
+/**
+ * Sanitize the string
+ */
+var sanitizeRegex = /[&<>'\"]/g;
+output.sanitize = function(str) {
+  if (typeof str != "string") str = str.toString();
+  return str.replace(sanitizeRegex, function(c) {
+    if (c == '&') return '&amp;';
+    if (c == '<') return '&lt;';
+    if (c == '>') return '&gt;';
+    if (c == '"') return '&#34;';
+    if (c == "'") return '&#39;';
+    return c;
+  });
+};
+
+/**
+ * Outputs a string
+ */
+output.prototype.write = function(msg) {
+  if (msg == null) return;
+  var isString = typeof msg != "string";
+  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+    msg = msg.toString();
+    isString = true;
+  }
+  if (isString) {
+    if (this.isPromise) {
+      this.output.push(msg);
+      this.isPromise = false;
+      this.offset++;
+    } else {
+      this.output[this.offset] += msg;
+    }
+  } else {
+    this.isPromise = true;
+    this.offset ++;
+    this.output.push(msg);
+  }
+};
+
+/**
+ * safe mode
+ */ 
+output.prototype.safe_write = function(msg) {
+  if (msg == null) return;
+  var isString = typeof msg != "string";
+  if (!isString && ((msg instanceof String) || (typeof msg.then != "function"))) {
+    msg = msg.toString();
+    isString = true;
+  }
+  if (isString) {
+    if (this.isPromise) {
+      this.output.push(output.sanitize(msg));
+      this.isPromise = false;
+      this.offset++;
+    } else {
+      this.output[this.offset] += output.sanitize(msg);
+    }  
+  } else {
+    this.isPromise = true;
+    this.offset ++;
+    this.sanitize.push(this.offset);
+    this.output.push(msg);
+  }
+};
+
+/**
+ * Renders the output
+ */
+output.prototype.toString = function() {
+  var result;
+  if (this.offset == -1) {
+    result = "";
+  } else if (this.offset == 0) {
+    result = this.output[0];
+  } else {
+    result = Promise.all(this.output).then(function(parts) {
+      for(var i = 0, l = this.sanitize.length; i < l; i++) {
+        var offset = this.sanitize[i];
+        parts[offset] = output.sanitize(parts[offset] == null ? "": parts[offset]);
+      }
+      return parts.join('');
+    }.bind(this));
+  }
+  if (this.hook) {
+    if (result.then) {
+      return result.then(function(result) {
+        return this.hook(result);
+      }.bind(this));
+    }
+    result = this.hook(result);
+  }
+  return result;  
+};
+
+// lib/ejs.js at Sun Mar 31 2019 15:12:36 GMT+0200 (CEST)
+/**
+ * Copyright (C) 2019 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * @url https://ejs.js.org
+ */
+
 
 
 
@@ -68,106 +183,10 @@ ejs.prototype.render = function(str, data) {
 };
 
 /**
- * 
- */
-var sanitizeRegex = /[&<>'\"]/g;
-ejs.sanitize = function(str) {
-  if (typeof str != "string") str = str.toString();
-  return str.replace(sanitizeRegex, function(c) {
-    if (c == '&') return '&amp;';
-    if (c == '<') return '&lt;';
-    if (c == '>') return '&gt;';
-    if (c == '"') return '&#34;';
-    if (c == "'") return '&#39;';
-    return c;
-  });
-};
-
-/**
  * Output serializer
  */
 ejs.prototype.output = function() {
-  var sanitize = [];
-  var hook = null;
-  var output = [];
-  var offset = -1;
-  var isPromise = true;
-  return new Proxy(output, {
-    get: function(obj, prop) {
-      if (prop == 'output') {
-        var result;
-        if (offset == -1) {
-          result = "";
-        } else if (offset == 0) {
-          result = output[0];
-        } else {
-          result = Promise.all(output).then(function(parts) {
-            for(var i = 0, l = sanitize.length; i < l; i++) {
-              var offset = sanitize[i];
-              parts[offset] = ejs.sanitize(parts[offset] == null ? "": parts[offset]);
-            }
-            return parts.join('');
-          });
-        }
-        if (hook) {
-          if (offset > 0) {
-            return result.then(function(result) {
-              return hook(result);
-            });
-          }
-          return hook(result);
-        }
-        return result;
-      } else if (prop == "toString") {
-        return this.get.bind(this, obj, "output");
-      }
-      return null;
-    },
-    set: function(obj, prop, data) {
-      if (data == null) return true;
-      if (prop == 'echo') {
-        if (typeof data != "string" && typeof data.then != "function") {
-          data = data.toString();
-        }
-        if (typeof data.then == "function") {
-          isPromise = true;
-          offset ++;
-          output.push(data);
-        } else if (isPromise) {
-          output.push(data);
-          isPromise = false;
-          offset++;
-        } else {
-          output[offset] += data;
-        }
-      } else if (prop == "safe") {
-        // safe mode
-        if (typeof data != "string" && typeof data.then != "function") {
-          data = data.toString();
-        }
-        if (typeof data.then === 'function') {
-          isPromise = true;
-          offset ++;
-          sanitize.push(offset);
-          output.push(data);
-        } else if (isPromise) {
-          output.push(ejs.sanitize(data));
-          isPromise = false;
-          offset++;
-        } else {
-          output[offset] += ejs.sanitize(data);
-        }
-      } else if (prop == "hook") {
-        hook = data;
-      } else {
-        throw new Error("Undefined property " + prop);
-      }
-      return true;
-    },
-    toString: function() {
-      return this.get(output, "output");
-    }
-  });
+  return new output();
 };
 
 /**
@@ -195,10 +214,11 @@ ejs.prototype.include = function(ctx, from, filename, args) {
 ejs.prototype.layout = function(ctx, from, output, filename, args) {
   var self = this;
   output.hook = function(contents) {
+    args = Object.assign({}, ctx, args || {});
     args.contents = contents;
     return self.renderFile(
       self.resolveInclude(filename, from), 
-      Object.assign({}, ctx, args || {})
+      args      
     );
   };
   return null;
@@ -227,6 +247,11 @@ ejs.prototype.resolveInclude = function(filename, from, isDir) {
     from = this.options.root;
     isDir = true;
   }
+  if (filename[0] == '/')  {
+    filename = './' + filename.replace(/^\/*/, '');
+    from = this.options.root;
+    isDir = true;
+  }  
   return ejs.resolveInclude(filename, from, isDir);
 };
 
@@ -237,9 +262,6 @@ ejs.resolveInclude = function(filename, from, isDir) {
   if (from) {
     if (!isDir) {
       from = path.dirname(from);
-    }
-    if (filename[0] == '/')  {
-      filename = './' + filename.replace(/^\/*/, '');
     }
     filename = path.resolve(from, filename);
   }
