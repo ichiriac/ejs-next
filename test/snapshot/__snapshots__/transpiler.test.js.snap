@@ -111,6 +111,44 @@ return _$e.toString();
 "
 `;
 
+exports[`Transpiler Simple case 2`] = `
+"if (arguments.length < 2) {
+	locals = ejs;
+	ejs = (typeof global != \\"undefined\\" && global.ejs) || (typeof window != \\"undefined\\" && window.ejs);
+	if(!ejs) return Promise.reject(new Error(\\"EJS module is not loaded\\"));
+	ejs = new ejs({\\"localsName\\":\\"locals\\"});
+}
+locals = locals || {};
+var include = ejs.include.bind(ejs, locals, \\"eval\\");
+var block = ejs.block.bind(ejs, locals);
+var _$e = ejs.output();
+var layout = ejs.layout.bind(ejs, locals, \\"eval\\", _$e);
+_$e.write(\`
+    Before Include
+    \`);
+_$e.write( include((locals.foo || \\"\\"), function() {
+var _$e = ejs.output();
+ %>
+      Header of Inner Block
+      <%- include((locals.bar || \\"\\"), function() {
+var _$e = ejs.output();
+ %>
+      Footer of Inner Block
+      <% 
+return _$e.toString();
+} ;_$e.write(\`  
+    \`);
+ 
+return _$e.toString();
+} );
+_$e.write(\`
+    After Include
+    \`);
+
+return _$e.toString();
+"
+`;
+
 exports[`Transpiler Template with redirected output 1`] = `
 "\\"use strict\\";
 if (arguments.length < 2) {

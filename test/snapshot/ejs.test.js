@@ -29,5 +29,5 @@ describe('Template', () => {
       expect(output).toMatchSnapshot();
       done();
     }).catch(reject);
-  });   
+  });
 });

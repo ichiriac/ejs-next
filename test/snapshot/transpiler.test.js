@@ -20,6 +20,20 @@ describe('Transpiler', () => {
     `, { strict: false, localsName: 'foo' });
     expect(program).toMatchSnapshot();
   });
+
+  it('Simple case', () => {
+    expect(transpiler(new lexer(), `
+    Before Include
+    <%- include(foo, function() {@ %>
+      Header of Inner Block
+      <%- include(bar, function() {@ %>
+      Footer of Inner Block
+      <% @}) %>  
+    <% @}) %>
+    After Include
+    `)).toMatchSnapshot();
+  });
+    
   it('Simple case / strict mode', () => {
     var program = transpiler(new lexer(), `
     <foo> <%%
