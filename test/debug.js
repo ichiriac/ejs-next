@@ -10,7 +10,16 @@ var opt = {
   root: __dirname + '/snapshot/views/'
 };
 
-var fn = ejs.compile(`<%= foo ? foo.bar.baz : baz %>`, { strict: false, root: __dirname });
+var fn = ejs.compile(`
+    Before Include
+    <%- include(foo, function() {@ %>
+      Header of Inner Block
+      <%- include(bar, function() {@ %>
+      Footer of Inner Block
+      <% @}) %>  
+    <% @}) %>
+    After Include
+`, { strict: false, root: __dirname });
 for(var i = 0; i < 1; i++) {
   Promise.resolve(
     fn({

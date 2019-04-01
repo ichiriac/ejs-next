@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+  // lib/output.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -121,7 +121,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+// lib/ejs.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors

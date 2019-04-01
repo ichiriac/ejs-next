@@ -128,19 +128,22 @@ _$e.write(\`
     \`);
 _$e.write( include((locals.foo || \\"\\"), function() {
 var _$e = ejs.output();
- %>
+ ;_$e.write(\`
       Header of Inner Block
-      <%- include((locals.bar || \\"\\"), function() {
+      \`);
+_$e.write( include((locals.bar || \\"\\"), function() {
 var _$e = ejs.output();
- %>
+ ;_$e.write(\`
       Footer of Inner Block
-      <% 
+      \`);
+ 
 return _$e.toString();
-} ;_$e.write(\`  
+}) );
+_$e.write(\`  
     \`);
  
 return _$e.toString();
-} );
+}) );
 _$e.write(\`
     After Include
     \`);
@@ -167,11 +170,12 @@ _$e.write(\`
 _$e.write( include('foo', {
           contents: function() {
 var _$e = ejs.output();
- %>
+ ;_$e.write(\`
             Hello world
-          <% 
+          \`);
+ 
 return _$e.toString();
-}
+})
         )
       );
 _$e.write(\`

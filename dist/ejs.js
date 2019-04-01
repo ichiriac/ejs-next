@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+  // lib/lexer.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -35,20 +35,21 @@ lexer.tokens = {
   T_OPT_COMMENT:        4,  // <%#
   T_OPT_CLEAN_OUTPUT:   5,  // <%=
   T_OPT_OUTPUT:         6,  // <%-
-  T_OPT_WS_STRIP:       7,  // <%_ | _%>
+  T_OPT_WS_STRIP:       7,  // <%_
   T_OPT_NL_STRIP:       8,  // -%>
-  T_SOURCE:             9,  // if (js...)
-  T_WHITESPACE:         10, // ' ' || \t || \r || \n 
-  T_TEXT:               11, // "..." || '...' || `...` 
-  T_COMMENT:            12, // /* ... */ 
-  T_IDENTIFIER:         13, // [A-Za-z][A-Za-z0-9]*
-  T_OPEN_BRACKET:       14, 
-  T_CLOSE_BRACKET:      15,
-  T_OPEN_PARA:          16,
-  T_CLOSE_PARA:         17,
-  T_DBL_COLON:          18,
-  T_OPEN_CAPTURE:       19, // {@
-  T_CLOSE_CAPTURE:      20  // @}
+  T_CLOSE_STRIP:        9,  // _%>
+  T_SOURCE:             10,  // if (js...)
+  T_WHITESPACE:         11, // ' ' || \t || \r || \n 
+  T_TEXT:               12, // "..." || '...' || `...` 
+  T_COMMENT:            13, // /* ... */ 
+  T_IDENTIFIER:         14, // [A-Za-z][A-Za-z0-9]*
+  T_OPEN_BRACKET:       15, 
+  T_CLOSE_BRACKET:      16,
+  T_OPEN_PARA:          17,
+  T_CLOSE_PARA:         18,
+  T_DBL_COLON:          19,
+  T_OPEN_CAPTURE:       20, // {@
+  T_CLOSE_CAPTURE:      21  // @}
 };
 
 /**
@@ -127,10 +128,10 @@ lexer.prototype.next = function() {
         }
       } else {
         this.state = lexer.states.S_INLINE;
-        if (char === this.char_strip) {
+        if (char == this.char_strip) {
           this.offset += this.close_tag.length;
-          return this.token(lexer.tokens.T_OPT_WS_STRIP);
-        } else if (char === this.char_html) {
+          return this.token(lexer.tokens.T_CLOSE_STRIP);
+        } else if (char == this.char_html) {
           this.offset += this.close_tag.length;
           return this.token(lexer.tokens.T_OPT_NL_STRIP);
         } else {
@@ -227,7 +228,7 @@ lexer.prototype.next = function() {
               this.state = lexer.states.S_INLINE;
               this.offset += this.close_tag.length;
               if (isStripWs) {
-                return this.token(lexer.tokens.T_OPT_WS_STRIP);
+                return this.token(lexer.tokens.T_CLOSE_STRIP);
               } else if (isStripHtml) {
                 return this.token(lexer.tokens.T_OPT_NL_STRIP);
               }
@@ -259,7 +260,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+// lib/transpile.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -309,22 +310,25 @@ var generator = function(lexer, opts, filename) {
   this.useInclude = false;
   this.useLayout = false;
   this.useBlock = false;
-  this.opts = opts;
-  if (opts.strict) {
+  this.opts = opts || {};
+  if (!this.opts.localsName) {
+    this.opts.localsName = 'locals';
+  }
+  if (this.opts.strict) {
     this.write('"use strict";\n');
   }
   this.write('if (arguments.length < 2) {\n');
-  this.write('\t' + opts.localsName + ' = ejs;\n');
+  this.write('\t' + this.opts.localsName + ' = ejs;\n');
   this.write('\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n');
   this.write('\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n');
-  this.write('\tejs = new ejs('+JSON.stringify(opts)+');\n');
+  this.write('\tejs = new ejs('+JSON.stringify(this.opts)+');\n');
   this.write('}\n');
-  this.write(opts.localsName + ' = ' + opts.localsName + ' || {};\n');
-  this.write('var include = ejs.include.bind(ejs, '+opts.localsName+', "'+filename+'");\n');  
-  this.write('var block = ejs.block.bind(ejs, '+opts.localsName+');\n');  
+  this.write(this.opts.localsName + ' = ' + this.opts.localsName + ' || {};\n');
+  this.write('var include = ejs.include.bind(ejs, '+this.opts.localsName+', "'+filename+'");\n');  
+  this.write('var block = ejs.block.bind(ejs, '+this.opts.localsName+');\n');  
   this.write('var _$e = ejs.output();\n');  
-  this.write('var layout = ejs.layout.bind(ejs, '+opts.localsName+', "'+filename+'", _$e);\n');  
-  this.setLocalVar(opts.localsName);
+  this.write('var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', "'+filename+'", _$e);\n');  
+  this.setLocalVar(this.opts.localsName);
   this.next().parseBody();
   this.write('\nreturn _$e.toString();\n');
 };
@@ -471,7 +475,7 @@ generator.prototype.parseVar = function() {
 /**
  * Parsing a closure structure
  */
-generator.prototype.parseFunction = function() {
+generator.prototype.parseFunction = function(isOut) {
   if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
     this.setLocalVar().write().nextTok();
   }
@@ -491,7 +495,7 @@ generator.prototype.parseFunction = function() {
   if (this.tok[0] == lexer.tokens.T_OPEN_CAPTURE) {
     this.write("{\nvar _$e = ejs.output();\n"); 
     this.nextTok().parseBody(lexer.tokens.T_CLOSE_CAPTURE);
-    this.write("\nreturn _$e.toString();\n}");
+    this.write("\nreturn _$e.toString();\n}" + (isOut ? ')' : ''));
     if (this.tok[0] == lexer.tokens.T_CLOSE_CAPTURE) this.nextTok();
   } else {
     if (this.tok[0] == lexer.tokens.OPEN_BRACKET) this.write().nextTok();
@@ -521,29 +525,30 @@ generator.prototype.parseBody = function(escape) {
     } else if (this.tok[0] == lexer.tokens.T_OPT_COMMENT) {
       // comments
       this.write('/* ' + this.tok[1].replace('/', '?') + ' */\n').next();
-    } else {      
+    } else {
       // inner code block
       var out = false;
       if (this.tok[0] == lexer.tokens.T_OPT_OUTPUT) {
         this.write('_$e.write(');
         out = true;
+        this.nextTok();
       } else if (this.tok[0] == lexer.tokens.T_OPT_CLEAN_OUTPUT) {
         this.write('_$e.safe_write(');
         out = true;
+        this.nextTok();
       } else if (this.tok[0] == lexer.tokens.T_OPEN || this.tok[0] == lexer.tokens.T_OPT_WS_STRIP) {
         out = false;
-      } else {
-        this.write();
+        this.nextTok();
       }
-      this.nextTok();
+      
       while(this.tok[0] != lexer.tokens.T_EOF) {
         if (this.tok[0] == lexer.tokens.T_CLOSE) break;
-        if (this.tok[0] == lexer.tokens.T_OPT_WS_STRIP) break;
+        if (this.tok[0] == lexer.tokens.T_CLOSE_STRIP) break;
         if (this.tok[0] == lexer.tokens.T_OPT_NL_STRIP) break;
         if (this.tok[0] == escape) return this;
         if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
           if (this.tok[1] == 'function') {
-            this.write().nextTok().parseFunction();
+            this.write().nextTok().parseFunction(out);
           } else if (this.tok[1] == 'var' || this.tok[1] == 'let' || this.tok[1] == 'const') {
             this.write('var').nextTok().parseVar();
             continue;
@@ -583,7 +588,7 @@ generator.prototype.parseBody = function(escape) {
       }
       var strip = this.tok[0];
       if (this.next().tok[0] == lexer.tokens.T_INLINE) {
-        if (strip == lexer.tokens.T_OPT_WS_STRIP) {
+        if (strip == lexer.tokens.T_CLOSE_STRIP) {
           // strip spaces on next inline token
           this.tok[1] = this.tok[1].replace(/^[ \t]*\n?/, '');
         } else if (strip == lexer.tokens.T_OPT_NL_STRIP) {
@@ -604,7 +609,7 @@ var transpile = function(io, buffer, opts, filename) {
   var out = new generator(io, opts, filename || "eval");
   return out.toString();
 };
-// lib/output.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+// lib/output.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -719,7 +724,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sun Mar 31 2019 18:08:23 GMT+0200 (CEST)
+// lib/ejs.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
