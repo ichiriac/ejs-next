@@ -1,6 +1,6 @@
 {
   "name": "ejs-next",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "EJS next gen",
   "main": "./lib/ejs.js",
   "scripts": {
