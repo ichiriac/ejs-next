@@ -32,5 +32,8 @@
     "jest": "^24.1.0",
     "microtime": "^3.0.0",
     "uglify-js": "^3.4.9"
+  },
+  "dependencies": {
+    "source-list-map": "^2.0.1"
   }
 }
