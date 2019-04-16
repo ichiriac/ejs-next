@@ -9,6 +9,7 @@ var extract = function(file) {
   contents = "// " + file + " at " + (new Date()).toString() + "\n" + contents;
   return contents
     .replace(/var\s[^=]+\s=\srequire\([^\)]+\);/g, '')
+    .replace(/"use strict";/g, '')
     .replace(/module\.exports[^;]+;/g, '')
   ;
 };
