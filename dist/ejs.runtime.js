@@ -6,13 +6,13 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+  // lib/output.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-"use strict";
+
 
 /**
  * Output handler
@@ -121,7 +121,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+// lib/ejs.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -139,6 +139,7 @@ output.prototype.toString = function() {
 var ejs = function(opts) {
   if (!opts) opts = {};
   this.options = {
+    cache: opts.cache || false,
     strict: opts.strict || false,
     localsName: opts.localsName || 'locals',
     root: opts.root || '/'
@@ -146,13 +147,35 @@ var ejs = function(opts) {
 };
 
 /**
+ * List of cached items
+ * @see options.cache = true
+ */
+ejs.__cache = {};
+
+/**
+ * List of registered helpers
+ * @see ejs.registerFunction
+ */
+ejs.__fn = {};
+
+/**
  * Compiles a buffer
  * @return Function(any): Promise<string>
  */
 ejs.prototype.compile = function(buffer, filename)  {
-  var code = transpile(new lexer(), buffer, this.options, filename || "eval");
+  if (this.options.cache && ejs.__cache.hasOwnProperty(buffer)) {
+    return ejs.__cache[buffer];
+  }
+  var io = new lexer();
+  io.input(buffer);
+  var out = new transpile(io, this.options, filename || "eval");
+  var code = out.toString();
   try {
-    return new Function('ejs,' + this.options.localsName, code).bind(null, this);
+    var fn = new Function('ejs,' + this.options.localsName, code).bind(null, this);
+    if (this.options.cache) {
+      ejs.__cache[buffer] = fn;
+    }
+    return fn;
   } catch(e) {
     var line = e.lineNumber ? e.lineNumber - 6 : 1;
     var se = new SyntaxError(e.message, filename, line);
@@ -202,9 +225,15 @@ ejs.render = function(str, data, options) {
  * Include a file
  */
 ejs.prototype.include = function(ctx, from, filename, args) {
+  if (typeof args == 'function') {
+    args =  { contents: args() };
+  }
+  if (typeof args == 'string') {
+    args =  { contents: args };
+  }
   return this.renderFile(
     this.resolveInclude(filename, from), 
-    Object.assign(ctx, args || {})
+    Object.assign({}, ctx, args || {})
   );
 };
 
@@ -272,6 +301,14 @@ ejs.resolveInclude = function(filename, from, isDir) {
 };
 
 /**
+ * Registers a function
+ */
+ejs.registerFunction = function(name, cb) {
+  ejs.__fn[name] = cb;
+  transpile.__fn[name] = true;
+};
+
+/**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
@@ -281,10 +318,7 @@ ejs.prototype.renderFile = function(filename, data) {
     if (filename.substring(0, self.options.root.length) != self.options.root) {
       filename = ejs.resolveInclude(filename, self.options.root, true);
     }
-    fs.readFile(filename, function(err, str) {
-      if (err) {
-        return reject(err);
-      }
+    var run = function(str) {
       try {
         var fn = self.compile(str.toString(), filename);
         var result = fn(data);
@@ -296,7 +330,18 @@ ejs.prototype.renderFile = function(filename, data) {
       } catch(e) {
         return reject(e);
       }
-    });
+    };
+    if (self.options.cache && ejs.__cache.hasOwnProperty(filename)) {
+      run(ejs.__cache[filename]);
+    } else {
+      fs.readFile(filename, function(err, str) {
+        if (err) {
+          return reject(err);
+        }
+        if (self.options.cache) ejs.__cache[filename] = str;
+        run(str);
+      });
+    }
   });
 };
 
@@ -317,7 +362,22 @@ ejs.renderFile = function(filename, data, options) {
  *
  * @func
  */
-ejs.__express = ejs.renderFile;
+ejs.__express = function(filename, data, cb) {
+  var opt = {};
+  if (data.settings) {
+    if (data.settings['view cache']) {
+      opt.cache = true;
+    }
+    if (data.settings['views']) {
+      opt.root = data.settings['views'];
+    }
+  }
+  ejs.renderFile(filename, data, opt).then(function(output) {
+    cb(null, output);
+  }).catch(function(err) {
+    cb(err, null);
+  });
+};
 
 /**
  * Expose it as a global for standalone (serialized ?) functions

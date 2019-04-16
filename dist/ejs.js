@@ -6,13 +6,13 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+  // lib/lexer.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-"use strict";
+
 
 var lexer = function() {
   this.open_tag = '<%';
@@ -260,14 +260,15 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+// lib/transpile.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-"use strict";
 
+
+var SourceListMap = require("source-list-map").SourceListMap;
 
 /**
  * List of reserved keywords in javascript
@@ -299,7 +300,7 @@ var reserved = {
  * Creates a generator
  */
 var generator = function(lexer, opts, filename) {
-  this.code = '';
+  this.code = new SourceListMap();
   this.source = '';
   this.source_offset = 0;
   this.lexer = lexer;
@@ -311,43 +312,35 @@ var generator = function(lexer, opts, filename) {
   this.useLayout = false;
   this.useBlock = false;
   this.opts = opts || {};
+  this.helpers = {};
   if (!this.opts.localsName) {
     this.opts.localsName = 'locals';
   }
+  var headers = '';
   if (this.opts.strict) {
-    this.write('"use strict";\n');
+    headers += '\n';
   }
-  this.write('if (arguments.length < 2) {\n');
-  this.write('\t' + this.opts.localsName + ' = ejs;\n');
-  this.write('\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n');
-  this.write('\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n');
-  this.write('\tejs = new ejs('+JSON.stringify(this.opts)+');\n');
-  this.write('}\n');
-  this.write(this.opts.localsName + ' = ' + this.opts.localsName + ' || {};\n');
-  this.write('var include = ejs.include.bind(ejs, '+this.opts.localsName+', "'+filename+'");\n');  
-  this.write('var block = ejs.block.bind(ejs, '+this.opts.localsName+');\n');  
-  this.write('var _$e = ejs.output();\n');  
-  this.write('var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', "'+filename+'", _$e);\n');  
+  headers += 'if (arguments.length < 2) {\n';
+  headers += '\t' + this.opts.localsName + ' = ejs;\n';
+  headers += '\tejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);\n';
+  headers += '\tif(!ejs) return Promise.reject(new Error("EJS module is not loaded"));\n';
+  headers += '\tejs = new ejs('+JSON.stringify(this.opts)+');\n';
+  headers += '}\n';
+  headers += this.opts.localsName + ' = ' + this.opts.localsName + ' || {};\n';
+  headers += 'var include = ejs.include.bind(ejs, '+this.opts.localsName+', "'+filename+'");\n';
+  headers += 'var block = ejs.block.bind(ejs, '+this.opts.localsName+');\n';
+  headers += 'var _$e = ejs.output();\n';
+  headers += 'var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', "'+filename+'", _$e);\n';
   this.setLocalVar(this.opts.localsName);
   this.next().parseBody();
+  for(var k in this.helpers) {
+    headers += 'var '+k+' = ejs.constructor.__fn.' + k + '.bind(ejs, '+this.opts.localsName+');\n';
+  }
+  this.code.preprend(headers);
   this.write('\nreturn _$e.toString();\n');
 };
 
-/**
- * Generate the sourcemap
- */
-generator.prototype.sourcemap = function() {
-  var data = {
-    "version": 3,
-    "sources": [this.filename],
-    "names": this.names,
-    "mappings": ";;;;;;;;;;;;AAAA",
-    "file":this.filename,
-    "sourcesContent":this.source
-  };
-  var buff = new Buffer(JSON.stringify(data));
-  return "//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
-};
+generator.__fn = {};
 
 /**
  * Reads the next token
@@ -388,12 +381,11 @@ generator.prototype.nextTok = function() {
 generator.prototype.write = function(code) {
   if (!code) code = this.tok[1];
   if (this.source_offset != this.source.length) {
-    this.mappings.push(
-      [this.source_offset, this.code.length]
-    );
+    this.code.add(code, this.filename, this.source.substring(this.source_offset, this.source.length));
     this.source_offset = this.source.length;
+  } else {
+    this.code.add(code);
   }
-  this.code += code;
   return this;
 };
 
@@ -401,10 +393,10 @@ generator.prototype.write = function(code) {
  * Renders the output
  */
 generator.prototype.toString = function() {
-  if (this.opts.debug) {
-    return this.code + "\n" + this.sourcemap();
-  }
-  return this.code;
+  var out = this.code.toStringWithSourceMap();
+  out.map.sourcesContent = this.source;
+  var buff = new Buffer(JSON.stringify(out.map));
+  return out.source + "\n//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
 };
 
 /**
@@ -413,6 +405,7 @@ generator.prototype.toString = function() {
 generator.prototype.isReserved = function(name) {
   name = name.split('.', 2)[0];
   if (reserved[name]) return true;
+  if (generator.__fn[name]) return true;
   for(var i = this.locals.length - 1; i > -1; i--) {
     if (this.locals[i][name]) return true;
   }
@@ -570,7 +563,14 @@ generator.prototype.parseBody = function(escape) {
                   this.write(this.opts.localsName + '.' + varname);
                 }
               } else {
-                this.write(varname);
+                if (generator.__fn[varname]) {
+                  if (!this.helpers[varname]) {
+                    this.helpers[varname] = true;
+                  }
+                  this.write(varname);
+                } else {
+                  this.write(varname);
+                }
               }
             }
             continue;
@@ -601,21 +601,13 @@ generator.prototype.parseBody = function(escape) {
   return this;
 };
 
-/**
- * Define the lexer -> token -> code transformations
- */
-var transpile = function(io, buffer, opts, filename) {
-  io.input(buffer);
-  var out = new generator(io, opts, filename || "eval");
-  return out.toString();
-};
-// lib/output.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+// lib/output.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
  * @url https://ejs.js.org
  */
-"use strict";
+
 
 /**
  * Output handler
@@ -724,7 +716,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Mon Apr 01 2019 23:50:21 GMT+0200 (CEST)
+// lib/ejs.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -742,6 +734,7 @@ output.prototype.toString = function() {
 var ejs = function(opts) {
   if (!opts) opts = {};
   this.options = {
+    cache: opts.cache || false,
     strict: opts.strict || false,
     localsName: opts.localsName || 'locals',
     root: opts.root || '/'
@@ -749,13 +742,35 @@ var ejs = function(opts) {
 };
 
 /**
+ * List of cached items
+ * @see options.cache = true
+ */
+ejs.__cache = {};
+
+/**
+ * List of registered helpers
+ * @see ejs.registerFunction
+ */
+ejs.__fn = {};
+
+/**
  * Compiles a buffer
  * @return Function(any): Promise<string>
  */
 ejs.prototype.compile = function(buffer, filename)  {
-  var code = transpile(new lexer(), buffer, this.options, filename || "eval");
+  if (this.options.cache && ejs.__cache.hasOwnProperty(buffer)) {
+    return ejs.__cache[buffer];
+  }
+  var io = new lexer();
+  io.input(buffer);
+  var out = new transpile(io, this.options, filename || "eval");
+  var code = out.toString();
   try {
-    return new Function('ejs,' + this.options.localsName, code).bind(null, this);
+    var fn = new Function('ejs,' + this.options.localsName, code).bind(null, this);
+    if (this.options.cache) {
+      ejs.__cache[buffer] = fn;
+    }
+    return fn;
   } catch(e) {
     var line = e.lineNumber ? e.lineNumber - 6 : 1;
     var se = new SyntaxError(e.message, filename, line);
@@ -805,9 +820,15 @@ ejs.render = function(str, data, options) {
  * Include a file
  */
 ejs.prototype.include = function(ctx, from, filename, args) {
+  if (typeof args == 'function') {
+    args =  { contents: args() };
+  }
+  if (typeof args == 'string') {
+    args =  { contents: args };
+  }
   return this.renderFile(
     this.resolveInclude(filename, from), 
-    Object.assign(ctx, args || {})
+    Object.assign({}, ctx, args || {})
   );
 };
 
@@ -875,6 +896,14 @@ ejs.resolveInclude = function(filename, from, isDir) {
 };
 
 /**
+ * Registers a function
+ */
+ejs.registerFunction = function(name, cb) {
+  ejs.__fn[name] = cb;
+  transpile.__fn[name] = true;
+};
+
+/**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
@@ -884,10 +913,7 @@ ejs.prototype.renderFile = function(filename, data) {
     if (filename.substring(0, self.options.root.length) != self.options.root) {
       filename = ejs.resolveInclude(filename, self.options.root, true);
     }
-    fs.readFile(filename, function(err, str) {
-      if (err) {
-        return reject(err);
-      }
+    var run = function(str) {
       try {
         var fn = self.compile(str.toString(), filename);
         var result = fn(data);
@@ -899,7 +925,18 @@ ejs.prototype.renderFile = function(filename, data) {
       } catch(e) {
         return reject(e);
       }
-    });
+    };
+    if (self.options.cache && ejs.__cache.hasOwnProperty(filename)) {
+      run(ejs.__cache[filename]);
+    } else {
+      fs.readFile(filename, function(err, str) {
+        if (err) {
+          return reject(err);
+        }
+        if (self.options.cache) ejs.__cache[filename] = str;
+        run(str);
+      });
+    }
   });
 };
 
@@ -920,7 +957,22 @@ ejs.renderFile = function(filename, data, options) {
  *
  * @func
  */
-ejs.__express = ejs.renderFile;
+ejs.__express = function(filename, data, cb) {
+  var opt = {};
+  if (data.settings) {
+    if (data.settings['view cache']) {
+      opt.cache = true;
+    }
+    if (data.settings['views']) {
+      opt.root = data.settings['views'];
+    }
+  }
+  ejs.renderFile(filename, data, opt).then(function(output) {
+    cb(null, output);
+  }).catch(function(err) {
+    cb(err, null);
+  });
+};
 
 /**
  * Expose it as a global for standalone (serialized ?) functions
