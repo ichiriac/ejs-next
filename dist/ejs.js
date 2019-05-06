@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+  // lib/lexer.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -260,7 +260,7 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+// lib/transpile.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -313,6 +313,7 @@ var generator = function(lexer, opts, filename) {
   this.useBlock = false;
   this.opts = opts || {};
   this.helpers = {};
+  this.tmp=0;
   if (!this.opts.localsName) {
     this.opts.localsName = 'locals';
   }
@@ -330,12 +331,21 @@ var generator = function(lexer, opts, filename) {
   headers += 'var include = ejs.include.bind(ejs, '+this.opts.localsName+', "'+filename+'");\n';
   headers += 'var block = ejs.block.bind(ejs, '+this.opts.localsName+');\n';
   headers += 'var _$e = ejs.output();\n';
+  headers += 'ejs._output = _$e;\n';
   headers += 'var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', "'+filename+'", _$e);\n';
   this.setLocalVar(this.opts.localsName);
   this.next().parseBody();
   for(var k in this.helpers) {
     headers += 'var '+k+' = ejs.constructor.__fn.' + k + '.bind(ejs, '+this.opts.localsName+');\n';
   }
+  if (this.tmp  > 0) {
+    headers += 'var f1=null';
+    for(var t = 1; t < this.tmp; t++) {
+      headers += ',f' + (t + 1) + '=null';  
+    }
+    headers += ';\n';
+  }
+
   this.code.preprend(headers);
   this.write('\nreturn _$e.toString();\n');
 };
@@ -396,7 +406,7 @@ generator.prototype.toString = function() {
   var out = this.code.toStringWithSourceMap();
   out.map.sourcesContent = this.source;
   var buff = new Buffer(JSON.stringify(out.map));
-  return out.source + "\n//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
+  return out.source; // + "\n//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
 };
 
 /**
@@ -440,9 +450,57 @@ generator.prototype.parseValue = function(stop) {
       this.write().nextTok().parseFunction();
     }
     if (!stop && (this.tok[1] == ';' || this.tok[1] == ',')) return this;
-    this.write().nextTok();
+    
+    if (this.tok[0] == lexer.tokens.T_IDENTIFIER) {
+      var varname = this.tok[1];
+      this.nextTok();
+      if (this.inObject && this.inKey) {
+        this.write(varname + ' ');
+      } else {
+        if (!this.isReserved(varname)) {
+          if (!this.opts.strict) {
+            this.safeVar(varname);
+          } else {
+            this.write(this.opts.localsName + '.' + varname  + ' ');
+          }
+        } else {
+          if (generator.__fn[varname]) {
+            if (!this.helpers[varname]) {
+              this.helpers[varname] = true;
+            }
+            this.write(varname + ' ');
+          } else {
+            this.write(varname + ' ');
+          }
+        }
+      }
+    } else {
+      this.write().nextTok();
+    }
   }
   return this;
+};
+
+/**
+ * Generates a safe variable output
+ */
+generator.prototype.safeVar = function(varname) {
+  varname = varname.split('.');
+  var code = this.opts.localsName;
+  if (this.tok[1] == '(') {
+    // check function :
+    for(var i = 0; i < varname.length - 1; i++) {
+      code = '(' + code + '.' + varname[i] + ' || "")';
+    }
+    this.write('(( (f'+(++this.tmp)+' = ' + code  + ') && f'+(this.tmp)+' && typeof f'+this.tmp+'["'+varname[varname.length - 1]+'"] == "function") ? f'+this.tmp+'["'+varname[varname.length - 1]+'"](');
+    this.nextTok().parseValue(')');
+    this.write('): "") ').nextTok();
+  } else {
+    for(var i = 0; i < varname.length; i++) {
+      code = '(' + code + '.' + varname[i] + ' || "")';
+    }
+    this.write(code  + ' ');
+  }
 };
 
 /**
@@ -549,34 +607,28 @@ generator.prototype.parseBody = function(escape) {
             var varname = this.tok[1];
             this.nextTok();
             if (this.inObject && this.inKey) {
-              this.write(varname);
+              this.write(varname + ' ');
             } else {
               if (!this.isReserved(varname)) {
                 if (!this.opts.strict) {
-                  varname = varname.split('.');
-                  var code = this.opts.localsName;
-                  for(var i = 0; i < varname.length; i++) {
-                    code = '(' + code + '.' + varname[i] + ' || "")';
-                  }
-                  this.write(code);
+                  this.safeVar(varname);
                 } else {
-                  this.write(this.opts.localsName + '.' + varname);
+                  this.write(this.opts.localsName + '.' + varname  + ' ');
                 }
               } else {
                 if (generator.__fn[varname]) {
                   if (!this.helpers[varname]) {
                     this.helpers[varname] = true;
                   }
-                  this.write(varname);
+                  this.write(varname + ' ');
                 } else {
-                  this.write(varname);
+                  this.write(varname + ' ');
                 }
               }
             }
             continue;
           }
         } else {
-
           this.write();
         }
         this.nextTok();
@@ -601,7 +653,7 @@ generator.prototype.parseBody = function(escape) {
   return this;
 };
 
-// lib/output.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+// lib/output.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -634,6 +686,40 @@ output.sanitize = function(str) {
     if (c == "'") return '&#39;';
     return c;
   });
+};
+
+output.prototype.buffer = function(msg) {
+
+  /**
+   * Buffers current state
+   */
+  var hook = this.hook;
+  var output = this.output;
+  var offset = this.offset;
+  var sanitize = this.sanitize;
+  var isPromise = this.isPromise;
+
+  /**
+   * Re-initialize buffers
+   */
+  this.hook = null;
+  this.output = [];
+  this.offset = -1;
+  this.sanitize = [];
+  this.isPromise = true;
+
+  /**
+   * Flush contents
+   */
+  return function() {
+    var result = this.toString();
+    this.hook = hook;
+    this.output = output;
+    this.offset = offset;
+    this.sanitize = sanitize;
+    this.isPromise = isPromise;
+    return result;
+  }.bind(this);
 };
 
 /**
@@ -716,7 +802,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+// lib/ejs.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -739,6 +825,7 @@ var ejs = function(opts) {
     localsName: opts.localsName || 'locals',
     root: opts.root || '/'
   };
+  this._session = {};
 };
 
 /**
@@ -853,14 +940,19 @@ ejs.prototype.layout = function(ctx, from, output, filename, args) {
  */
 ejs.prototype.block = function(ctx, name, value) {
   if (!name) return null;
-  if (!ctx[name]) {
-    ctx[name] = this.output();
+  if (!this._session[name]) {
+    this._session[name] = this.output();
   }
   if (arguments.length == 3) {
-    ctx[name].echo = typeof value == "function" ? value() : value;
-    return value;
+    if (typeof value == 'function') {
+      var output = this._output.buffer();
+      value();
+      value = output();
+    }
+    this._session[name].write(value);
+    return this._session[name];
   }
-  return ctx[name].output;
+  return this._session[name].toString();
 };
 
 /**
@@ -968,9 +1060,15 @@ ejs.__express = function(filename, data, cb) {
     }
   }
   ejs.renderFile(filename, data, opt).then(function(output) {
-    cb(null, output);
+    if (cb && typeof cb == 'function') {
+      cb(null, output);
+    } else {
+      throw new Error('No response callback');
+    }
   }).catch(function(err) {
-    cb(err, null);
+    if (cb && typeof cb == 'function') {
+      cb(err, null);
+    } else throw err;
   });
 };
 

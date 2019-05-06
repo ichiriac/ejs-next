@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+  // lib/output.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -39,6 +39,40 @@ output.sanitize = function(str) {
     if (c == "'") return '&#39;';
     return c;
   });
+};
+
+output.prototype.buffer = function(msg) {
+
+  /**
+   * Buffers current state
+   */
+  var hook = this.hook;
+  var output = this.output;
+  var offset = this.offset;
+  var sanitize = this.sanitize;
+  var isPromise = this.isPromise;
+
+  /**
+   * Re-initialize buffers
+   */
+  this.hook = null;
+  this.output = [];
+  this.offset = -1;
+  this.sanitize = [];
+  this.isPromise = true;
+
+  /**
+   * Flush contents
+   */
+  return function() {
+    var result = this.toString();
+    this.hook = hook;
+    this.output = output;
+    this.offset = offset;
+    this.sanitize = sanitize;
+    this.isPromise = isPromise;
+    return result;
+  }.bind(this);
 };
 
 /**
@@ -121,7 +155,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Tue Apr 16 2019 22:15:21 GMT+0200 (CEST)
+// lib/ejs.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -144,6 +178,7 @@ var ejs = function(opts) {
     localsName: opts.localsName || 'locals',
     root: opts.root || '/'
   };
+  this._session = {};
 };
 
 /**
@@ -258,14 +293,19 @@ ejs.prototype.layout = function(ctx, from, output, filename, args) {
  */
 ejs.prototype.block = function(ctx, name, value) {
   if (!name) return null;
-  if (!ctx[name]) {
-    ctx[name] = this.output();
+  if (!this._session[name]) {
+    this._session[name] = this.output();
   }
   if (arguments.length == 3) {
-    ctx[name].echo = typeof value == "function" ? value() : value;
-    return value;
+    if (typeof value == 'function') {
+      var output = this._output.buffer();
+      value();
+      value = output();
+    }
+    this._session[name].write(value);
+    return this._session[name];
   }
-  return ctx[name].output;
+  return this._session[name].toString();
 };
 
 /**
@@ -373,9 +413,15 @@ ejs.__express = function(filename, data, cb) {
     }
   }
   ejs.renderFile(filename, data, opt).then(function(output) {
-    cb(null, output);
+    if (cb && typeof cb == 'function') {
+      cb(null, output);
+    } else {
+      throw new Error('No response callback');
+    }
   }).catch(function(err) {
-    cb(err, null);
+    if (cb && typeof cb == 'function') {
+      cb(err, null);
+    } else throw err;
   });
 };
 

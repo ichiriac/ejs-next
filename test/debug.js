@@ -11,14 +11,26 @@ var opt = {
 };
 
 var fn = ejs.compile(`
-    Before Include
-    <%- include(foo, function() {@ %>
-      Header of Inner Block
-      <%- include(bar, function() {@ %>
-      Footer of Inner Block
-      <% @}) %>  
-    <% @}) %>
-    After Include
+OK, so have fun! :D
+-------------------
+<%
+    var fruits = ["Apple", "Pear", "Orange", "Lemon"]
+      , random = " ".repeat(198).split("").map(function(x) { return Math.random() })
+      ;
+%>
+
+These fruits are amazing:
+<%_ for(var i = 0; i < fruits.length; ++i) { %>
+  - <%=fruits[i]%>s
+<%_ } %>
+
+Let's see some random numbers:
+
+<% 
+  random.forEach(function(c, i) {
+%> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
+  });
+%>
 `, { strict: false, root: __dirname });
 for(var i = 0; i < 1; i++) {
   Promise.resolve(
