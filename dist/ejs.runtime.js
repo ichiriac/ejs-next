@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/output.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+  // lib/output.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -155,7 +155,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+// lib/ejs.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -173,13 +173,23 @@ output.prototype.toString = function() {
 var ejs = function(opts) {
   if (!opts) opts = {};
   this.options = {
-    cache: opts.cache || false,
-    strict: opts.strict || false,
+    cache: opts.cache || ejs.cache,
+    strict: opts.strict || ejs.strict,
     localsName: opts.localsName || 'locals',
-    root: opts.root || '/'
+    delimiter: opts.delimiter || ejs.delimiter,
+    root: opts.root || ejs.root
   };
   this._session = {};
 };
+
+ejs.root = '/';
+
+
+ejs.cache = false;
+
+ejs.strict = false;
+
+ejs.delimiter = '%';
 
 /**
  * List of cached items
@@ -201,7 +211,7 @@ ejs.prototype.compile = function(buffer, filename)  {
   if (this.options.cache && ejs.__cache.hasOwnProperty(buffer)) {
     return ejs.__cache[buffer];
   }
-  var io = new lexer();
+  var io = new lexer(this.options.delimiter);
   io.input(buffer);
   var out = new transpile(io, this.options, filename || "eval");
   var code = out.toString();
@@ -228,17 +238,25 @@ ejs.compile = function(str, options) {
   return instance.compile(str);
 };
 
+ejs.prototype.prepareContext = function(data) {
+  return data;
+}
+
 /**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
 ejs.prototype.render = function(str, data) {
-  var result = this.compile(str)(data);
+  var result = this.compile(str)(
+    this.prepareContext(data)
+  );
   if (typeof result.then == "function") {
     return result;
   }
   return Promise.resolve(result);
 };
+
+
 
 /**
  * Output serializer
@@ -361,7 +379,9 @@ ejs.prototype.renderFile = function(filename, data) {
     var run = function(str) {
       try {
         var fn = self.compile(str.toString(), filename);
-        var result = fn(data);
+        var result = fn(
+          self.prepareContext(data)
+        );
         if (result && typeof result.then == "function") {
           result.then(resolve).catch(reject);
         } else {
@@ -433,6 +453,7 @@ if (typeof window !== 'undefined') {
 } else if (typeof global !== 'undefined') {
   global.ejs = ejs;
 }
+
 
 
 

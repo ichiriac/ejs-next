@@ -6,7 +6,7 @@
 (function($, w) {
   "use strict";
   
-  // lib/lexer.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+  // lib/lexer.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -14,9 +14,10 @@
  */
 
 
-var lexer = function() {
-  this.open_tag = '<%';
-  this.close_tag = '%>';
+var lexer = function(delimiter) {
+  if (!delimiter) delimiter = '%';
+  this.open_tag = '<' + delimiter;
+  this.close_tag = delimiter + '>';
   this.char_comment = '#';
   this.char_output = '=';
   this.char_html = '-';
@@ -260,7 +261,8 @@ lexer.prototype.next = function() {
   }
 };
 
-// lib/transpile.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+
+// lib/transpile.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -300,6 +302,11 @@ var reserved = {
  * Creates a generator
  */
 var generator = function(lexer, opts, filename) {
+  if (!this) {
+    lexer.input(opts);
+    var tr = new generator(lexer, filename, 'eval');
+    return tr.toString();
+  }
   this.code = new SourceListMap();
   this.source = '';
   this.source_offset = 0;
@@ -328,12 +335,14 @@ var generator = function(lexer, opts, filename) {
   headers += '\tejs = new ejs('+JSON.stringify(this.opts)+');\n';
   headers += '}\n';
   headers += this.opts.localsName + ' = ' + this.opts.localsName + ' || {};\n';
-  headers += 'var include = ejs.include.bind(ejs, '+this.opts.localsName+', "'+filename+'");\n';
+  headers += 'var include = ejs.include.bind(ejs, '+this.opts.localsName+', '+JSON.stringify(filename)+');\n';
   headers += 'var block = ejs.block.bind(ejs, '+this.opts.localsName+');\n';
   headers += 'var _$e = ejs.output();\n';
   headers += 'ejs._output = _$e;\n';
-  headers += 'var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', "'+filename+'", _$e);\n';
+  headers += 'var layout = ejs.layout.bind(ejs, '+this.opts.localsName+', '+JSON.stringify(filename)+', _$e);\n';
   this.setLocalVar(this.opts.localsName);
+  this.setLocalVar('echo');
+  this.setLocalVar('write');
   this.next().parseBody();
   for(var k in this.helpers) {
     headers += 'var '+k+' = ejs.constructor.__fn.' + k + '.bind(ejs, '+this.opts.localsName+');\n';
@@ -390,11 +399,13 @@ generator.prototype.nextTok = function() {
  */
 generator.prototype.write = function(code) {
   if (!code) code = this.tok[1];
-  if (this.source_offset != this.source.length) {
-    this.code.add(code, this.filename, this.source.substring(this.source_offset, this.source.length));
-    this.source_offset = this.source.length;
-  } else {
-    this.code.add(code);
+  if (code) {
+    if (this.source_offset != this.source.length) {
+      this.code.add(code, this.filename, this.source.substring(this.source_offset, this.source.length));
+      this.source_offset = this.source.length;
+    } else {
+      this.code.add(code);
+    }
   }
   return this;
 };
@@ -405,8 +416,8 @@ generator.prototype.write = function(code) {
 generator.prototype.toString = function() {
   var out = this.code.toStringWithSourceMap();
   out.map.sourcesContent = this.source;
-  var buff = new Buffer(JSON.stringify(out.map));
-  return out.source; // + "\n//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
+  var buff = Buffer.from(JSON.stringify(out.map));
+  return out.source + "\n//# sourceMappingURL=data:application/json;charset=utf-8;base64," + buff.toString('base64');
 };
 
 /**
@@ -545,13 +556,14 @@ generator.prototype.parseFunction = function(isOut) {
   if (this.tok[0] == lexer.tokens.T_CLOSE_PARA) this.write().nextTok();
   if (this.tok[0] == lexer.tokens.T_OPEN_CAPTURE) {
     this.write("{\nvar _$e = ejs.output();\n"); 
+    this.write("var echo = _$e.safe_write.bind(_$e);\n"); 
+    this.write("var write = _$e.write.bind(_$e);\n"); 
     this.nextTok().parseBody(lexer.tokens.T_CLOSE_CAPTURE);
-    this.write("\nreturn _$e.toString();\n}" + (isOut ? ')' : ''));
-    if (this.tok[0] == lexer.tokens.T_CLOSE_CAPTURE) this.nextTok();
+    this.write("\nreturn _$e.toString();\n}");
   } else {
     if (this.tok[0] == lexer.tokens.OPEN_BRACKET) this.write().nextTok();
     this.parseBody(lexer.tokens.CLOSE_BRACKET);
-    if (this.tok[0] == lexer.tokens.CLOSE_BRACKET) this.write().nextTok();
+    if (this.tok[0] == lexer.tokens.CLOSE_BRACKET) this.write();
   }
   this.locals.pop();
 };
@@ -591,7 +603,7 @@ generator.prototype.parseBody = function(escape) {
         out = false;
         this.nextTok();
       }
-      
+      var prevTok = null;
       while(this.tok[0] != lexer.tokens.T_EOF) {
         if (this.tok[0] == lexer.tokens.T_CLOSE) break;
         if (this.tok[0] == lexer.tokens.T_CLOSE_STRIP) break;
@@ -607,6 +619,8 @@ generator.prototype.parseBody = function(escape) {
             var varname = this.tok[1];
             this.nextTok();
             if (this.inObject && this.inKey) {
+              this.write(varname + ' ');
+            } else if (prevTok && prevTok[1] === '.') {
               this.write(varname + ' ');
             } else {
               if (!this.isReserved(varname)) {
@@ -631,6 +645,7 @@ generator.prototype.parseBody = function(escape) {
         } else {
           this.write();
         }
+        prevTok = this.tok;
         this.nextTok();
       }
       if (out) {
@@ -653,7 +668,8 @@ generator.prototype.parseBody = function(escape) {
   return this;
 };
 
-// lib/output.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+
+// lib/output.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -802,7 +818,7 @@ output.prototype.toString = function() {
   return result;  
 };
 
-// lib/ejs.js at Sat Apr 27 2019 01:09:26 GMT+0200 (CEST)
+// lib/ejs.js at Sun Jul 17 2022 20:24:39 GMT+0200 (GMT+02:00)
 /**
  * Copyright (C) 2019 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -820,13 +836,23 @@ output.prototype.toString = function() {
 var ejs = function(opts) {
   if (!opts) opts = {};
   this.options = {
-    cache: opts.cache || false,
-    strict: opts.strict || false,
+    cache: opts.cache || ejs.cache,
+    strict: opts.strict || ejs.strict,
     localsName: opts.localsName || 'locals',
-    root: opts.root || '/'
+    delimiter: opts.delimiter || ejs.delimiter,
+    root: opts.root || ejs.root
   };
   this._session = {};
 };
+
+ejs.root = '/';
+
+
+ejs.cache = false;
+
+ejs.strict = false;
+
+ejs.delimiter = '%';
 
 /**
  * List of cached items
@@ -848,7 +874,7 @@ ejs.prototype.compile = function(buffer, filename)  {
   if (this.options.cache && ejs.__cache.hasOwnProperty(buffer)) {
     return ejs.__cache[buffer];
   }
-  var io = new lexer();
+  var io = new lexer(this.options.delimiter);
   io.input(buffer);
   var out = new transpile(io, this.options, filename || "eval");
   var code = out.toString();
@@ -875,17 +901,25 @@ ejs.compile = function(str, options) {
   return instance.compile(str);
 };
 
+ejs.prototype.prepareContext = function(data) {
+  return data;
+}
+
 /**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
 ejs.prototype.render = function(str, data) {
-  var result = this.compile(str)(data);
+  var result = this.compile(str)(
+    this.prepareContext(data)
+  );
   if (typeof result.then == "function") {
     return result;
   }
   return Promise.resolve(result);
 };
+
+
 
 /**
  * Output serializer
@@ -1008,7 +1042,9 @@ ejs.prototype.renderFile = function(filename, data) {
     var run = function(str) {
       try {
         var fn = self.compile(str.toString(), filename);
-        var result = fn(data);
+        var result = fn(
+          self.prepareContext(data)
+        );
         if (result && typeof result.then == "function") {
           result.then(resolve).catch(reject);
         } else {
@@ -1080,6 +1116,7 @@ if (typeof window !== 'undefined') {
 } else if (typeof global !== 'undefined') {
   global.ejs = ejs;
 }
+
 
 
 
