@@ -1,28 +1,35 @@
 /**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2022 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
 
-const lexer = require('../../lib/lexer');
-const transpiler = require('../../lib/transpile');
+const lexer = require("../../lib/lexer");
+const transpiler = require("../../lib/transpile");
 
-describe('Transpiler', () => {
-  it('Simple case', () => {
-    var program = transpiler(new lexer(), `
+describe("Transpiler", () => {
+  it("Simple case", () => {
+    var program = transpiler(
+      new lexer(),
+      `
     <foo> <%%
     <%# comment %>
     <%_ if (foo == "%>\\"%>") { _%>
       <%= bar %>
     <% } %>
     </foo>
-    `, { strict: false, localsName: 'foo' });
+    `,
+      { strict: false, localsName: "foo" }
+    );
     expect(program).toMatchSnapshot();
   });
 
-  it('Simple case', () => {
-    expect(transpiler(new lexer(), `
+  it("Simple case", () => {
+    expect(
+      transpiler(
+        new lexer(),
+        `
     Before Include
     <%- include(foo, function() {@ %>
       Header of Inner Block
@@ -31,33 +38,45 @@ describe('Transpiler', () => {
       <% @}) %>  
     <% @}) %>
     After Include
-    `)).toMatchSnapshot();
+    `
+      )
+    ).toMatchSnapshot();
   });
-    
-  it('Simple case / strict mode', () => {
-    var program = transpiler(new lexer(), `
+
+  it("Simple case / strict mode", () => {
+    var program = transpiler(
+      new lexer(),
+      `
     <foo> <%%
     <%# comment %>
     <%_ if (foo == "%>\\"%>") { _%>
       <%= bar %>
     <% } %>
     </foo>
-    `, { strict: true, localsName: 'fooBar' });
+    `,
+      { strict: true, localsName: "fooBar" }
+    );
     expect(program).toMatchSnapshot();
   });
-  it('Template with redirected output', () => {
-    var program = transpiler(new lexer(), `
+  it("Template with redirected output", () => {
+    var program = transpiler(
+      new lexer(),
+      `
       <%- include('foo', {
           contents: function() {@ %>
             Hello world
           <% @}
         })
       %>
-    `, { strict: true, localsName: '_' });
+    `,
+      { strict: true, localsName: "_" }
+    );
     expect(program).toMatchSnapshot();
-  });    
-  it('More complex', () => {
-    var program = transpiler(new lexer(), `
+  });
+  it("More complex", () => {
+    var program = transpiler(
+      new lexer(),
+      `
 OK, so have fun! :D
 -------------------
 <%
@@ -81,7 +100,9 @@ Let's see some random numbers:
 %>
 
 Hello <%= locals.name %> !
-    `, { strict: false, localsName: 'foo' });
+    `,
+      { strict: false, localsName: "foo" }
+    );
     expect(program).toMatchSnapshot();
   });
 });
