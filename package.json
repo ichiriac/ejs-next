@@ -28,8 +28,8 @@
   "devDependencies": {
     "benchmark": "^2.1.4",
     "coveralls": "^3.0.2",
-    "ejs": "^2.6.1",
-    "jest": "^24.1.0",
+    "ejs": "^3.1.8",
+    "jest": "^29.3.1",
     "microtime": "^3.0.0",
     "uglify-js": "^3.4.9"
   },
