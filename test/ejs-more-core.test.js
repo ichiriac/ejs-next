@@ -50,10 +50,24 @@ describe("ejs more core branches", () => {
     expect(content).toContain("Body");
   });
 
-  test("include(): absolute path resolves against root", async () => {
+  test("include(): relative include from eval resolves in root", async () => {
     const engine = new ejs({ root: tmpRoot });
-    const res = await engine.include({}, path.join("/", path.basename(inc)));
+    const res = await engine.include({}, "eval", "inc");
     expect(res).toBe("Inclusion");
+  });
+
+  test("multi-root resolution selects sibling file if missing in current root", () => {
+    const rootA = path.join(tmpRoot, 'A');
+    const rootB = path.join(tmpRoot, 'B');
+    fs.mkdirSync(path.join(rootA, 'x'), { recursive: true });
+    fs.mkdirSync(path.join(rootB, 'x'), { recursive: true });
+    const rel = path.join('x','test.ejs');
+    const fileInA = path.join(rootA, rel);
+    fs.writeFileSync(fileInA, 'A');
+    const nonExistingInB = path.join(rootB, rel);
+    // Call low-level resolver with folders array
+    const resolved = ejs.resolveInclude(nonExistingInB, rootB, false, [rootA, rootB]);
+    expect(resolved).toBe(fileInA);
   });
 
   test("renderFile uses cache on repeated reads (no fs second time)", async () => {
