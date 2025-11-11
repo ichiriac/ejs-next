@@ -5,7 +5,7 @@
   "main": "./lib/ejs.js",
   "scripts": {
     "test": "jest",
-    "cover": "jest --coverage --coverageDirectory=coverage/"
+    "cover": "jest --coverage --coverageDirectory=coverage/ && cat coverage/lcov.info | coveralls"
   },
   "repository": {
     "type": "git",

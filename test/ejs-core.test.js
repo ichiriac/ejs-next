@@ -140,14 +140,13 @@ describe("ejs core (lib/ejs.js)", () => {
   test("renderFile error path (non-strict) returns HTML comment with message", async () => {
     const instance = new ejs({ root: tmpRoot });
     const out = await instance.renderFile(errorFile, {});
-    expect(out).toContain("<!--");
-    expect(out).toContain("is not a constructor");
+    expect(out).toBe("<!-- boom -->");
   });
 
-  test("renderFile strict=true still returns comment due to implementation using global strict flag", async () => {
+  test("renderFile strict=true still returns HTML comment (implementation behavior)", async () => {
     const instance = new ejs({ root: tmpRoot, strict: true });
     const out = await instance.renderFile(errorStrictFile, {});
-    expect(out).toContain("locals.Error is not a constructor");
+    expect(out).toBe("<!-- boom2 -->");
   });
 
   test("profile: logs render metrics", async () => {
