@@ -6,7 +6,7 @@
 (function ($, w) {
   "use strict";
 
-  // lib/lexer.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
+  // lib/lexer.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -288,7 +288,7 @@ lexer.prototype.next = function () {
 };
 
 
-// lib/transpile.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
+// lib/transpile.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -372,6 +372,37 @@ var reserved = {
   String: true,
   Function: true,
   Date: true,
+  Error: true,
+  TypeError: true,
+  SyntaxError: true,
+  ReferenceError: true,
+  RangeError: true,
+  EvalError: true,
+  URIError: true,
+  Number: true,
+  Symbol: true,
+  BigInt: true,
+  RegExp: true,
+  Promise: true,
+  Map: true,
+  Set: true,
+  WeakMap: true,
+  WeakSet: true,
+  Reflect: true,
+  Proxy: true,
+  Intl: true,
+  console: true,
+  Boolean: true,
+  RegExp: true,
+  Number: true,
+  parseInt: true,
+  parseFloat: true,
+  isNaN: true,
+  isFinite: true,
+  eval: true,
+  JSON: true,
+  console: true,
+  global: true,
   require: true,
   window: true,
   JSON: true,
@@ -835,7 +866,7 @@ generator.prototype.parseBody = function (escape) {
 };
 
 
-// lib/output.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
+// lib/output.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -990,7 +1021,7 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
+// lib/ejs.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
