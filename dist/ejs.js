@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 (function ($, w) {
   "use strict";
 
-  // lib/lexer.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
+  // lib/lexer.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 
@@ -288,10 +288,10 @@ lexer.prototype.next = function () {
 };
 
 
-// lib/transpile.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
+// lib/transpile.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 
@@ -866,10 +866,10 @@ generator.prototype.parseBody = function (escape) {
 };
 
 
-// lib/output.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
+// lib/output.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 
@@ -1021,10 +1021,10 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Tue Nov 11 2025 11:29:44 GMT+0000 (Coordinated Universal Time)
+// lib/ejs.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 

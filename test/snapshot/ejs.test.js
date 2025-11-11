@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Ioan CHIRIAC (MIT)
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */

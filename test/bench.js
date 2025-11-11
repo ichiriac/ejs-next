@@ -1,4 +1,4 @@
-const ejs2 = require("../lib/ejs");
+const ejs-next = require("../lib/ejs");
 const ejs = require("ejs");
 const benchmark = require("benchmark");
 var tpl = `
@@ -37,7 +37,7 @@ function test(name, fn) {
     fn(ejs, local1);
   });
   suite.add("ejs@2 - " + name, function () {
-    fn(ejs2, local2);
+    fn(ejs-next, local2);
   });
   // add listeners
   suite.on("cycle", function (event) {

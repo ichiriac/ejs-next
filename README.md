@@ -95,4 +95,4 @@ There are a number of implementations of EJS:
 
 ## License
 
-MIT License - Copyright (c) 2022 Ioan CHIRIAC
+MIT License - Copyright (c) 2025 Ioan CHIRIAC
