@@ -6,7 +6,7 @@
 (function ($, w) {
   "use strict";
 
-  // lib/output.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+  // lib/output.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
@@ -161,7 +161,7 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+// lib/ejs.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors

@@ -19,4 +19,15 @@ describe("Loop constructs", () => {
     const out = await ejs.render(tpl, {});
     expect(out).toMatchSnapshot();
   });
+
+  it("forEach callback from file", async () => {
+    const out = await ejs.renderFile('loop.ejs', {
+      stats: [
+        { id: 1, label: "Alice", value: 30 },
+        { id: 2, label: "Bob", value: 25 },
+        { id: 3, label: "Charlie", value: 35 }
+      ]
+    }, { root: __dirname + '/views' });
+    expect(out).toMatchSnapshot();
+  });
 });

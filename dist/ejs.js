@@ -6,7 +6,7 @@
 (function ($, w) {
   "use strict";
 
-  // lib/lexer.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+  // lib/lexer.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
@@ -288,7 +288,7 @@ lexer.prototype.next = function () {
 };
 
 
-// lib/transpile.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+// lib/transpile.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
@@ -443,6 +443,8 @@ var generator = function (lexer, opts, filename) {
   this.inObject = 0;
   this.helpers = {};
   this.tmp = 0;
+  this.pendingCall = 0;
+  this.inOut = false;
   if (!this.opts.localsName) {
     this.opts.localsName = "locals";
   }
@@ -679,25 +681,50 @@ generator.prototype.safeVar = function (varname) {
     for (var i = 0; i < varname.length - 1; i++) {
       code = "(" + code + "." + varname[i] + ' || "")';
     }
-    this.write(
-      "(( (f" +
-        ++this.tmp +
-        " = " +
-        code +
-        ") && f" +
-        this.tmp +
-        " && typeof f" +
-        this.tmp +
-        '["' +
-        varname[varname.length - 1] +
-        '"] == "function") ? f' +
-        this.tmp +
-        '["' +
-        varname[varname.length - 1] +
-        '"]('
-    );
-    this.nextTok().parseValue(")");
-    this.write('): "") ').nextTok();
+    if (this.inOut) {
+      // Expression form (used inside echo/safe_write)
+      this.write(
+        "(( (f" +
+          ++this.tmp +
+          " = " +
+          code +
+          ") && f" +
+          this.tmp +
+          " && typeof f" +
+          this.tmp +
+          '["' +
+          varname[varname.length - 1] +
+          '"] == "function") ? f' +
+          this.tmp +
+          '["' +
+          varname[varname.length - 1] +
+          '"]('
+      );
+      this.nextTok().parseValue(")");
+      this.write('): "") ').nextTok();
+    } else {
+      // Statement form (safer across EJS-close boundaries): guard && call(
+      this.write(
+        "(f" +
+          ++this.tmp +
+          " = " +
+          code +
+          ") && f" +
+          this.tmp +
+          " && typeof f" +
+          this.tmp +
+          '["' +
+          varname[varname.length - 1] +
+          '"] == "function" && f' +
+          this.tmp +
+          '["' +
+          varname[varname.length - 1] +
+          '"]('
+      );
+      this.nextTok().parseValue(")");
+      // no extra wrapper, let parseBody emit the terminating semicolon
+      this.nextTok();
+    }
   } else {
     for (var i = 0; i < varname.length; i++) {
       code = "(" + code + "." + varname[i] + ' || "")';
@@ -786,16 +813,19 @@ generator.prototype.parseBody = function (escape) {
       if (this.tok[0] == lexer.tokens.T_OPT_OUTPUT) {
         this.write("_$e.write(");
         out = true;
+        this.inOut = true;
         this.nextTok();
       } else if (this.tok[0] == lexer.tokens.T_OPT_CLEAN_OUTPUT) {
         this.write("_$e.safe_write(");
         out = true;
+        this.inOut = true;
         this.nextTok();
       } else if (
         this.tok[0] == lexer.tokens.T_OPEN ||
         this.tok[0] == lexer.tokens.T_OPT_WS_STRIP
       ) {
         out = false;
+        this.inOut = false;
         this.nextTok();
       }
       while (this.tok[0] != lexer.tokens.T_EOF) {
@@ -848,7 +878,8 @@ generator.prototype.parseBody = function (escape) {
       if (out) {
         this.write(");");
       } else {
-        this.write(";");
+        // Avoid prematurely ending statements when a cross-block function call is open
+        if (!this.pendingCall) this.write(";");
       }
       var strip = this.tok[0];
       if (this.next().tok[0] == lexer.tokens.T_INLINE) {
@@ -866,7 +897,7 @@ generator.prototype.parseBody = function (escape) {
 };
 
 
-// lib/output.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+// lib/output.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
@@ -1021,7 +1052,7 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Tue Nov 11 2025 11:33:06 GMT+0000 (Coordinated Universal Time)
+// lib/ejs.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors

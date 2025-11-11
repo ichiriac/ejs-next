@@ -1,0 +1,16 @@
+<div class="row row-cards mt-2">
+  <% stats.forEach(function(s){ %>
+    <div class="col-sm-6 col-lg-4">
+      <div class="card card-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="subheader"><%= s.label %></div>
+            <div class="ms-auto lh-1">
+              <div class="h1 mb-0"><%= s.value %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+</div>
