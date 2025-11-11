@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Loop constructs for loop 1`] = `"Items: [0] [1] [2]"`;
+
+exports[`Loop constructs forEach callback 1`] = `"(0:a)(1:b)(2:c)"`;
+
+exports[`Loop constructs while loop 1`] = `"0-1-2-"`;

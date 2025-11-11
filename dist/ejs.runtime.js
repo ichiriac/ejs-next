@@ -6,7 +6,7 @@
 (function ($, w) {
   "use strict";
 
-  // lib/output.js at Wed Dec 21 2022 16:32:40 GMT+0100 (heure normale d’Europe centrale)
+  // lib/output.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -161,7 +161,7 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Wed Dec 21 2022 16:32:40 GMT+0100 (heure normale d’Europe centrale)
+// lib/ejs.js at Tue Nov 11 2025 10:57:09 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2022 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs2/graphs/contributors
@@ -189,6 +189,8 @@ var ejs = function (opts) {
   };
   this._session = {};
 };
+
+ejs.dirname = 'views';
 
 ejs.root = "/";
 
@@ -227,7 +229,7 @@ ejs.prototype.compile = function (buffer, filename) {
   var out = new transpile(io, this.options, filename || "eval");
   var code = out.toString();
   try {
-    const AsyncFunction = async function () {}.constructor;
+    const AsyncFunction = async function () { }.constructor;
     var fn = new AsyncFunction("ejs", this.options.localsName, code).bind(
       null,
       this
@@ -348,31 +350,42 @@ ejs.prototype.block = function (ctx, name, value) {
  */
 ejs.prototype.resolveInclude = function (filename, from, isDir) {
   if (!from || from == "eval") {
-    from = this.options.root;
+    from = Array.isArray(this.options.root) ? this.options.root[0] : this.options.root;
     isDir = true;
   }
-  if (filename[0] == "/") {
+
+  if (filename[0] == "/" && !path.isAbsolute(filename)) {
     filename = "./" + filename.replace(/^\/*/, "");
-    from = this.options.root;
+    from = Array.isArray(this.options.root) ? this.options.root[0] : this.options.root;
     isDir = true;
   }
-  return ejs.resolveInclude(filename, from, isDir);
+  return ejs.resolveInclude(filename, from, isDir, this.options.root);
 };
 
 /**
  * Resolves a path
  */
-ejs.resolveInclude = function (filename, from, isDir) {
+ejs.resolveInclude = function (filename, from, isDir, folders) {
   if (from) {
     if (!isDir) {
       from = path.dirname(from);
     }
-    filename = path.resolve(from, filename);
+    filename = path.resolve(from, filename)
   }
+
   if (!path.extname(filename)) {
     filename += ".ejs";
   }
-  return filename;
+  if (folders && Array.isArray(folders)) {
+    try {
+      return ejs.selectFirstPathMatch(filename, folders);
+    } catch (e) {
+      throw e;
+    }
+  } else {
+    return filename;
+  }
+
 };
 
 /**
@@ -384,51 +397,134 @@ ejs.registerFunction = function (name, cb) {
 };
 
 /**
+ * Get first path that exists according to order of root relative siblings
+ * @param {*} root 
+ * @param {*} siblings 
+ * @param {*} filename 
+ * @returns 
+ */
+ejs.selectFirstPathMatch = function (filename, folders) {
+  try {
+    const { root, siblings } = ejs.relativeSiblings(filename, folders);
+    filename = path.relative(root, filename)
+    for (let sib of siblings) {
+      const _path = path.join(root, sib, filename)
+      if (fs.existsSync(_path)) {
+        return _path;
+      }
+    }
+    return path.join(root, filename)
+
+  } catch (e) {
+    throw e;
+  }
+}
+
+/**
+ * Get relative path to many roots from filename root
+ * @param {*} filename 
+ * @param {*} folders 
+ * @returns 
+ */
+ejs.relativeSiblings = function (filename, folders) {
+  try {
+    const root = ejs.selectRoot(filename, folders);
+    if (!root) throw (new Error(`File : ${filename} doesn't exists`))
+    const siblings = []
+    for (let sibling of folders) {
+      siblings.push(path.relative(root, sibling))
+    }
+    return {
+      siblings,
+      root: root
+    };
+
+  } catch (e) {
+    throw e;
+  }
+}
+/**
+ * Select root among folders where filename come from
+ * @param {*} filename 
+ */
+ejs.selectRoot = function (filename, folders) {
+  for (let root of folders) {
+    const test = filename.substring(0, root.length);
+    if (root == test) {
+      return root;
+    }
+  }
+  return false;
+}
+/**
  * Renders the specified template using the specified data
  * @return Promise<string>
  */
 ejs.prototype.renderFile = function (filename, data) {
   const self = this;
   const renderResult = new Promise(function (resolve, reject) {
-    if (filename.substring(0, self.options.root.length) != self.options.root) {
-      filename = ejs.resolveInclude(filename, self.options.root, true);
+    try {
+      filename = self.resolveInclude(filename);
+    } catch (e) {
+      return reject(e);
     }
     var run = function (str) {
-      const renderError = function (err) {
+      const renderError = function (err, method) {
         const stack = err.stack.split("\n");
-        let line = stack[1].split(":");
-        line = line[line.length - 2] - 18;
-        if (isNaN(line)) line = 1;
-        const start = line > 5 ? line - 5 : 0;
-        const lines = str
-          .toString()
-          .split("\n")
-          .slice(start, line + 5);
-        console.error(
-          lines
-            .map(function (code, index) {
-              if (code.length > 123) {
-                code =
-                  code.substring(0, 80) +
-                  "..." +
-                  code.substring(code.length - 40);
-              }
-              let num = start + index + 1;
-              if (num == line) {
-                return (
-                  ("" + num).padStart(3, "0") +
-                  " | " +
-                  code +
-                  "\n     " +
-                  "".padEnd(code.length, "~")
-                );
-              } else {
-                return ("" + num).padStart(3, "0") + " | " + code;
-              }
-            })
-            .join("\n")
-        );
-        console.error("\n" + stack[0] + "\n at " + filename + ":" + line);
+        let line = stack;
+        let err_method = 'unknown';
+        if (stack[1] && stack[1].split && typeof stack[1].split == "function") {
+          line = stack[1].split(":");
+          err_method = line[0].trim().split(' ')[1];
+        }
+        if (err_method == 'eval') {
+          line = line[line.length - 2] - 18;
+          if (isNaN(line)) line = 1;
+          const start = line > 5 ? line - 5 : 0;
+          const render_code = function (code, index) {
+            if (code.length > 123) {
+              code =
+                code.substring(0, 80) +
+                "..." +
+                code.substring(code.length - 40);
+            }
+            let num = start + index + 1;
+            if (num == line) {
+              return (
+                ("" + num).padStart(3, "0") +
+                " | " +
+                code +
+                "\n     " +
+                "".padEnd(code.length, "~")
+              );
+            } else {
+              return ("" + num).padStart(3, "0") + " | " + code;
+            }
+          };
+
+          if (method) {
+            method = method.toString();
+            const method_lines = method
+              .toString()
+              .split("\n")
+              .slice(start > 18 ? start - 18 : start, line + 18);
+            console.error(
+              method_lines.map(render_code).join("\n")
+            );
+          }
+          const lines = str
+            .toString()
+            .split("\n")
+            .slice(start, line + 5);
+          console.error(
+            lines
+              .map(render_code)
+              .join("\n")
+          );
+          console.error("\n" + stack[0] + "\n at " + filename + ":" + line);
+        } else {
+          console.error(err);
+        }
         if (data._includes) {
           data._includes.pop();
           if (data._includes.length > 0) {
@@ -438,13 +534,13 @@ ejs.prototype.renderFile = function (filename, data) {
           }
         }
       };
-
+      var fn;
       try {
         if (!data._includes) {
           data._includes = [];
         }
         data._includes.push(filename);
-        var fn = self.compile(str.toString(), filename);
+        fn = self.compile(str.toString(), filename);
         var result = fn(self.prepareContext(data));
         if (result && typeof result.then == "function") {
           result
@@ -456,9 +552,9 @@ ejs.prototype.renderFile = function (filename, data) {
               self.strict
                 ? reject
                 : function (err) {
-                    renderError(err);
-                    resolve("<!-- " + err.message + " -->");
-                  }
+                  renderError(err, fn);
+                  resolve("<!-- " + err.message + " -->");
+                }
             );
         } else {
           data._includes.pop();
@@ -466,13 +562,14 @@ ejs.prototype.renderFile = function (filename, data) {
         }
       } catch (e) {
         if (!self.strict) {
-          renderError(e);
+          renderError(e, fn);
           resolve("<!-- " + e.message + " -->");
         } else {
           return reject(e);
         }
       }
     };
+
     if (self.options.profile) {
       const now = new Date().getTime();
       nextTick(function () {

@@ -10,6 +10,14 @@ var opt = {
   root: __dirname + "/snapshot/views/",
 };
 
+  ejs.renderFile('page.ejs',{}, opt)
+  .then(function (output) {
+    console.log(output);
+  })
+  .catch(function (e) {
+    console.error(e);
+  });
+
 var fn = ejs.compile(
   `
 OK, so have fun! :D
