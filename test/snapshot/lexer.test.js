@@ -1,17 +1,17 @@
 /**
- * Copyright (C) 2019 Ioan CHIRIAC (MIT)
- * @authors https://github.com/ichiriac/ejs2/graphs/contributors
+ * Copyright (C) 2022 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
 "use strict";
 
-const lexer = require('../../lib/lexer');
+const lexer = require("../../lib/lexer");
 
 function test(source) {
   var lex = new lexer();
   lex.input(source);
   var tokens = [];
-  while(true) {
+  while (true) {
     var tok = lex.next();
     tokens.push(tok);
     if (tok[0] === lexer.tokens.T_EOF) break;
@@ -19,47 +19,59 @@ function test(source) {
   return tokens;
 }
 
-describe('Lexer', () => {
-  it('Simple case', () => {
-    expect(test(`
+describe("Lexer", () => {
+  it("Simple case", () => {
+    expect(
+      test(`
     <foo><%% 
     <%# comment %>
     <%_ if (foo == "%>\\"%>") { _%>
       <%= bar %>
     <% } %>
     </foo>
-    `)).toMatchSnapshot();
+    `)
+    ).toMatchSnapshot();
   });
 
-  describe('Comments', () => {
-    it('simple', () => {
-      expect(test(`
+  describe("Comments", () => {
+    it("simple", () => {
+      expect(
+        test(`
       before<%# comment %>after
-      `)).toMatchSnapshot();
+      `)
+      ).toMatchSnapshot();
     });
 
-    it('injection', () => {
-      expect(test(`
+    it("injection", () => {
+      expect(
+        test(`
       before<%# comment /* should break */ data %>after
-      `)).toMatchSnapshot();
+      `)
+      ).toMatchSnapshot();
     });
 
-    it('code with /*', () => {
-      expect(test(`
+    it("code with /*", () => {
+      expect(
+        test(`
       before<%= /* ok */ data %>after
-      `)).toMatchSnapshot();
+      `)
+      ).toMatchSnapshot();
     });
 
-    it('code with //', () => {
-      expect(test(`
+    it("code with //", () => {
+      expect(
+        test(`
       before<%= // no data %>after
-      `)).toMatchSnapshot();
+      `)
+      ).toMatchSnapshot();
     });
 
-    it('code with #', () => {
-      expect(test(`
+    it("code with #", () => {
+      expect(
+        test(`
       before<%= # no data %>after
-      `)).toMatchSnapshot();
+      `)
+      ).toMatchSnapshot();
     });
   });
 });

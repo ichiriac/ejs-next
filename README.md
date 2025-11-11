@@ -1,11 +1,12 @@
 # ejs-next
+
 [![Coverage Status](https://coveralls.io/repos/github/ichiriac/ejs-next/badge.svg?branch=master)](https://coveralls.io/github/ichiriac/ejs-next?branch=master)
 
 EJS next generation
 
 ---
 
-## Install 
+## Install
 
 ```
 npm install ejs-next
@@ -70,29 +71,28 @@ Here is my page content
 ## Express usage
 
 ```js
-var ejs = require('ejs-next');
-app.set('views', path.join(__dirname, 'views'));
-app.engine('ejs',  ejs.__express);
-app.set('view engine', 'ejs');
+var ejs = require("ejs-next");
+app.set("views", path.join(__dirname, "views"));
+app.engine("ejs", ejs.__express);
+app.set("view engine", "ejs");
 ```
 
 ### IDE Integration with Syntax Highlighting
 
-VSCode:Javascript EJS by *DigitalBrainstem*
+VSCode:Javascript EJS by _DigitalBrainstem_
 
 ## Related projects
 
 There are a number of implementations of EJS:
 
- * MDE's implementation, the v2 of the library: https://github.com/mde/ejs
- * TJ's implementation, the v1 of the library: https://github.com/tj/ejs
- * Jupiter Consulting's EJS: http://www.embeddedjs.com/
- * EJS Embedded JavaScript Framework on Google Code: https://code.google.com/p/embeddedjavascript/
- * Sam Stephenson's Ruby implementation: https://rubygems.org/gems/ejs
- * Erubis, an ERB implementation which also runs JavaScript: http://www.kuwata-lab.com/erubis/users-guide.04.html#lang-javascript
- * DigitalBrainstem EJS Language support: https://github.com/Digitalbrainstem/ejs-grammar
-
+- MDE's implementation, the v2 of the library: https://github.com/mde/ejs
+- TJ's implementation, the v1 of the library: https://github.com/tj/ejs
+- Jupiter Consulting's EJS: http://www.embeddedjs.com/
+- EJS Embedded JavaScript Framework on Google Code: https://code.google.com/p/embeddedjavascript/
+- Sam Stephenson's Ruby implementation: https://rubygems.org/gems/ejs
+- Erubis, an ERB implementation which also runs JavaScript: http://www.kuwata-lab.com/erubis/users-guide.04.html#lang-javascript
+- DigitalBrainstem EJS Language support: https://github.com/Digitalbrainstem/ejs-grammar
 
 ## License
 
-MIT License - Copyright (c) 2019 Ioan CHIRIAC
+MIT License - Copyright (c) 2022 Ioan CHIRIAC
