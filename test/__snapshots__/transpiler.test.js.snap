@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Transpiler Simple case 1`] = `
+";_$e.write(\`
+    <foo> <%%
+    \`);/*<%# comment %>*/;_$e.write(\`\`);
+     if (foo == "%>\\"%>") { 
+      ;_$e.write(\`\`);;_$e.safe_write( bar );;_$e.write(\`
+    \`); } ;_$e.write(\`
+    </foo>
+    \`);"
+`;
+
+exports[`Transpiler should handle closing tags missing 1`] = `";_$e.write(\`Hello \`);;_$e.write( name);"`;
+
+exports[`Transpiler should handle tag comments and opt comments 1`] = `
+";_$e.write(\`
+    \`);/*<%# This is a tag comment %>*/;_$e.write(\`
+    Hello \`); /* This is an opt comment */ ;_$e.write(\`
+    \`);;_$e.safe_write( name );;_$e.write(\`
+    \`);"
+`;
+
+exports[`Transpiler should transpile a simple template 1`] = `
+";_$e.write(\`Hello \`); var a = 1; ;_$e.write(\`
+
+\`);;_$e.safe_write( a );"
+`;
+
+exports[`Transpiler should transpile handle pre and post whitespace 1`] = `
+";_$e.write(\`Hello\`); 
+ var a = 1; 
+
+;_$e.write(\`\`);;_$e.safe_write( a );
+;_$e.write(\`End\`);"
+`;

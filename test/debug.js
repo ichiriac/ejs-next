@@ -5,56 +5,22 @@
  */
 /*jslint node: true */
 "use strict";
-var ejs = require("../lib/ejs");
+const ejs = require("../lib/ejs");
+const { compiler } = require("../lib/transpiler");
 var opt = {
-  root: __dirname + "/snapshot/views/",
+  root: __dirname + "/views/",
 };
+const src = "Hello <%= name %>, pi is approx. <%= Math.PI.size %>, can also <%= Math['PI'] %>!";
+const fn = compiler(src, { strict: false });
 
-  ejs.renderFile('page.ejs',{}, opt)
-  .then(function (output) {
-    console.log(output);
-  })
-  .catch(function (e) {
-    console.error(e);
-  });
-
-var fn = ejs.compile(
-  `
-OK, so have fun! :D
--------------------
-<%
-    var fruits = ["Apple", "Pear", "Orange", "Lemon"]
-      , random = " ".repeat(198).split("").map(function(x) { return Math.random() })
-      ;
-%>
-
-These fruits are amazing:
-<%_ for(var i = 0; i < fruits.length; ++i) { %>
-  - <%=fruits[i]%>s
-<%_ } %>
-
-Let's see some random numbers:
-
-<% 
-  random.forEach(function(c, i) {
-%> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
-  });
-%>
-`,
-  { strict: false, root: __dirname }
-);
-for (var i = 0; i < 1; i++) {
-  Promise.resolve(
-    fn({
-      foo: true,
-      bar: "bar",
-      baz: null,
-    })
-  )
-    .then(function (output) {
-      console.log(output);
-    })
-    .catch(function (e) {
-      console.error(e);
-    });
-}
+    ejs
+      .render(`
+<% title = 'Hello World' %>
+<% var contents = () => { %>
+  Hello <%= name %>
+<% } %>
+<%- include('layout.ejs', { name: 'John Wick' }) %>
+        `, { name: "World" })
+      .then(function (output) {
+        console.log(output);
+      });

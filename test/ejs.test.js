@@ -5,7 +5,7 @@
  */
 "use strict";
 
-const ejs = require("../../lib/ejs");
+const ejs = require("../lib/ejs");
 
 describe("Template", () => {
   it("Simple case", (done, reject) => {
@@ -33,7 +33,7 @@ describe("Template", () => {
   });
   it("Read file", (done, reject) => {
     ejs
-      .renderFile(__dirname + "/../foo.ejs", { name: "Foo" })
+      .renderFile(__dirname + "/views/page.ejs", { name: "Foo" }, { strict: false })
       .then(function (output) {
         expect(output).toMatchSnapshot();
         done();

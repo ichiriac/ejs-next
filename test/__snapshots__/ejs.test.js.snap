@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Template Read file 1`] = `
+"
+
+<html>
+  <head>
+    <title>Hello World</title>
+  </head>
+  <body>
+    <h1>Demo page</h1>
+    <div class="container">
+      
+    </div>
+    
+  </body>
+</html>"
+`;
+
+exports[`Template Simple case 1`] = `"Hello World"`;
+
+exports[`Template Statement 1`] = `"ok"`;
