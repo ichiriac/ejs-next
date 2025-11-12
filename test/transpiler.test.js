@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
+ * @url https://ejs.js.org
+ */
+"use strict";
 const { transpiler, compiler } = require("../lib/transpiler");
 
 describe("Transpiler", () => {
@@ -120,4 +126,42 @@ describe("Transpiler", () => {
     );
     expect(program.toString()).toMatchSnapshot();
   });  
+  it("test default template", () => {
+    var program = compiler(`
+OK, so have fun! :D
+-------------------
+<%
+    var fruits = ["Apple", "Pear", "Orange", "Lemon"]
+      , random = " ".repeat(198).split("").map(function(x) { return Math.random(); })
+      ;
+%>
+
+These fruits are amazing:
+<%_ for(var i = 0; i < fruits.length; ++i) { %>
+  - <%=fruits[i]%>s
+<%_ } %>
+
+Let's see some random numbers:
+
+<% 
+  random.forEach(function foo(c, i) {
+%> <%= c.toFixed(10) + ((i + 1) % 6 === 0 ? "\\n": "") %><%
+  });
+%>
+`);
+    expect(program.toString()).toMatchSnapshot();
+  });
+
+  it("test nested methods (with local args)", () => {
+    var program = compiler(
+      `<% function outer(arg) { %>
+         <% function inner() { return arg + globalVar; } %>
+         <%= inner() %>
+       <% } %>
+       <%= outer("test") %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });
+  
 });
