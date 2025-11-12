@@ -33,7 +33,12 @@ describe("Template", () => {
   });
   it("Read file", (done, reject) => {
     ejs
-      .renderFile(__dirname + "/views/page.ejs", { name: "Foo" }, { strict: false })
+      .renderFile("/views/page.ejs", { name: "Foo" }, { 
+        cache: false, 
+        profile: false, 
+        strict: false,
+        root: __dirname
+      })
       .then(function (output) {
         expect(output).toMatchSnapshot();
         done();
