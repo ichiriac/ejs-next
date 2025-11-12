@@ -1,4 +1,4 @@
-const ejs-next = require("../lib/ejs");
+const ejs_next = require("../lib/ejs");
 const ejs = require("ejs");
 const benchmark = require("benchmark");
 var tpl = `
@@ -37,7 +37,7 @@ function test(name, fn) {
     fn(ejs, local1);
   });
   suite.add("ejs@2 - " + name, function () {
-    fn(ejs-next, local2);
+    fn(ejs_next, local2);
   });
   // add listeners
   suite.on("cycle", function (event) {
@@ -84,10 +84,10 @@ test("render silent", function (instance, local) {
 });
 test("render include", function (instance, local) {
   if (!local.fn) {
-    local.fn = instance.compile('<%= include("/foo.ejs", { name: "foo" }) %>', {
+    local.fn = instance.compile('<%= include("/views/foo.ejs", { name: "foo" }) %>', {
       strict: true,
       root: __dirname,
     });
   }
-  local.fn();
+  local.fn({ name: "world" });
 });
