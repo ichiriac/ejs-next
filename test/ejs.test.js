@@ -45,4 +45,17 @@ describe("Template", () => {
       })
       .catch(reject);
   });
+
+  it("test registerFunction", (done, reject) => {
+    ejs.registerFunction("toUpperCase", function (_ctx, str) {
+      return String(str).toUpperCase();
+    });
+    ejs
+      .render(`Hello <%= toUpperCase(name) %>`, { name: "world" })
+      .then(function (output) {
+        expect(output).toMatchSnapshot();
+        done();
+      })
+      .catch(reject);
+  });
 });

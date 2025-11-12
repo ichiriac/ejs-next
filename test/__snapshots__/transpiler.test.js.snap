@@ -52,11 +52,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 var arr = [foo.bar, 2, 3];
 
@@ -81,11 +81,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 foo.arr = {
   [foo.arg]: foo.bar
@@ -111,11 +111,11 @@ ejs._output = _$e;
 locals._filename = undefined;
 const include = ejs.include.bind(ejs, locals, undefined);
 const block = ejs.block.bind(ejs, locals);
-locals._include = include;
+const layout = ejs.layout.bind(ejs, locals, undefined, _$e);locals._include = include;
 locals._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, locals, undefined, _$e);
+
 _$e.write(\`
 OK, so have fun! :D
 -------------------
@@ -172,11 +172,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 
 _$e.safe_write(Math.PI);
@@ -209,11 +209,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 
 _$e.safe_write(Math.PI);
@@ -247,11 +247,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 foo.arr = [foo.bar, 2, 3];
 
@@ -276,11 +276,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 function outer(arg) {
   
@@ -325,11 +325,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 
 _$e.safe_write(foo.arr["foo"].bar);
@@ -355,11 +355,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 foo.arr = {
   foo: foo.bar
@@ -386,11 +386,11 @@ ejs._output = _$e;
 foo._filename = undefined;
 const include = ejs.include.bind(ejs, foo, undefined);
 const block = ejs.block.bind(ejs, foo);
-foo._include = include;
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);foo._include = include;
 foo._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+
 _$e.write(\`\`);
 var arr;
 
@@ -414,11 +414,11 @@ ejs._output = _$e;
 locals._filename = undefined;
 const include = ejs.include.bind(ejs, locals, undefined);
 const block = ejs.block.bind(ejs, locals);
-locals._include = include;
+const layout = ejs.layout.bind(ejs, locals, undefined, _$e);locals._include = include;
 locals._output = _$e;
 const echo = _$e.safe_write.bind(_$e);
 const write = _$e.write.bind(_$e);
-const layout = ejs.layout.bind(ejs, locals, undefined, _$e);
+
 _$e.write(\`\`);
 
 _$e.safe_write((locals.bar ?? ''));

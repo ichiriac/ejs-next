@@ -20,3 +20,5 @@ exports[`Template Read file 1`] = `
 exports[`Template Simple case 1`] = `"Hello World"`;
 
 exports[`Template Statement 1`] = `"ok"`;
+
+exports[`Template test registerFunction 1`] = `"Hello WORLD"`;
