@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2025 Ioan CHIRIAC (MIT)
+ * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
+ * @url https://ejs.js.org
+ */
+"use strict";
 const lexer = require("../lib/lexer");
 
 const snapshotSource = (src, delimiter) => {
