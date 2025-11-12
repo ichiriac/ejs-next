@@ -6,7 +6,7 @@
 (function ($, w) {
   "use strict";
 
-  // lib/output.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
+  // lib/output.js at Wed Nov 12 2025 23:20:06 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
@@ -161,13 +161,12 @@ output.prototype.toString = function () {
 };
 
 
-// lib/ejs.js at Tue Nov 11 2025 11:58:46 GMT+0000 (Coordinated Universal Time)
+// lib/ejs.js at Wed Nov 12 2025 23:20:06 GMT+0000 (Coordinated Universal Time)
 /**
  * Copyright (C) 2025 Ioan CHIRIAC (MIT)
  * @authors https://github.com/ichiriac/ejs-next/graphs/contributors
  * @url https://ejs.js.org
  */
-
 
 
 
@@ -191,17 +190,11 @@ var ejs = function (opts) {
 };
 
 ejs.dirname = 'views';
-
 ejs.root = "/";
-
 ejs.cache = false;
-
 ejs.strict = false;
-
 ejs.profile = false;
-
 ejs.sourcemap = false;
-
 ejs.delimiter = "%";
 
 /**
@@ -224,24 +217,18 @@ ejs.prototype.compile = function (buffer, filename) {
   if (this.options.cache && ejs.__cache.hasOwnProperty(buffer)) {
     return ejs.__cache[buffer];
   }
-  var io = new lexer(this.options.delimiter);
-  io.input(buffer);
-  var out = new transpile(io, this.options, filename || "eval");
-  var code = out.toString();
   try {
-    const AsyncFunction = async function () { }.constructor;
-    var fn = new AsyncFunction("ejs", this.options.localsName, code).bind(
+    var fn = compiler(buffer, this.options, filename || "eval", this).bind(
       null,
       this
-    );
+    )
     if (this.options.cache) {
       ejs.__cache[buffer] = fn;
     }
     return fn;
   } catch (e) {
-    var line = e.lineNumber ? e.lineNumber - 6 : 1;
+    var line = e.lineNumber ? e.lineNumber: 1;
     var se = new SyntaxError(e.message, filename, line);
-    console.log("Bad code : " + code);
     se.stack =
       e.message +
       "\n    at " +
@@ -354,7 +341,10 @@ ejs.prototype.resolveInclude = function (filename, from, isDir) {
     isDir = true;
   }
 
-  if (filename[0] == "/" && !path.isAbsolute(filename)) {
+  if (path.isAbsolute(filename)) {
+    if (filename.startsWith(from)) {
+      filename = filename.substring(from.length);
+    }
     filename = "./" + filename.replace(/^\/*/, "");
     from = Array.isArray(this.options.root) ? this.options.root[0] : this.options.root;
     isDir = true;
@@ -393,7 +383,6 @@ ejs.resolveInclude = function (filename, from, isDir, folders) {
  */
 ejs.registerFunction = function (name, cb) {
   ejs.__fn[name] = cb;
-  transpile.__fn[name] = true;
 };
 
 /**

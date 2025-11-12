@@ -16,7 +16,7 @@ var extract = function (file) {
 
 var full = [];
 var runtime = [];
-["lib/lexer.js", "lib/transpile.js", "lib/output.js", "lib/ejs.js"].forEach(
+["lib/lexer.js", "lib/transpiler.js", "lib/output.js", "lib/ejs.js"].forEach(
   function (file) {
     full.push(extract(file));
   }
