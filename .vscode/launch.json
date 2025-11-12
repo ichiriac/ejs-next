@@ -5,6 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run test",
+      "request": "launch",
+      "runtimeArgs": [
+        "run-script",
+        "test"
+      ],
+      "runtimeExecutable": "npm",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node"
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Launch Debug",

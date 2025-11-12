@@ -1,4 +1,4 @@
-const { transpiler } = require("../lib/transpiler");
+const { transpiler, compiler } = require("../lib/transpiler");
 
 describe("Transpiler", () => {
   it("should transpile a simple template", () => {
@@ -33,7 +33,7 @@ describe("Transpiler", () => {
     expect(program).toMatchSnapshot();
   });
 
-    it("Simple case", () => {
+  it("Simple case", () => {
     var program = transpiler(
       `
     <foo> <%%
@@ -47,4 +47,77 @@ describe("Transpiler", () => {
     );
     expect(program).toMatchSnapshot();
   });
+
+  it("test globals", () => {
+    var program = compiler(
+      `<%= Math.PI %><%= include %><%= var1 %>`,
+      { strict: false, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });
+  it("test globals / strict", () => {
+    var program = compiler(
+      `<%= Math.PI %><%= include %><%= var1 %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });
+  it("test property access", () => {
+    var program = compiler(
+      `<%= arr['foo'].bar %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });
+  it("test assignment access", () => {
+    var program = compiler(
+      `<% var arr  = [bar, 2, 3]; %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });
+  it("test var declaration", () => {
+    var program = compiler(
+      `<% var arr; %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });  
+  it("test local assignement access", () => {
+    var program = compiler(
+      `<% arr = [bar, 2, 3]; %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });  
+  it("test assignment error", () => {
+    expect(() => {
+      compiler('<% var [ arr ] = [ 1 ]; %>', { strict: true });
+    }).toThrow();
+  });  
+  it("test local assignment error", () => {
+    expect(() => {
+      compiler('<% [ arr ] = [ 1 ]; %>', { strict: true });
+    }).toThrow();
+  });
+  it("test property access", () => {
+    var program = compiler(
+      `<% arr = { foo: bar }; %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });  
+  it("test computed property access", () => {
+    var program = compiler(
+      `<% arr = { [arg]: bar }; %>`,
+      { strict: true, localsName: "foo" }
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });    
+  it("test without options", () => {
+    var program = compiler(
+      `<%= bar %>`
+    );
+    expect(program.toString()).toMatchSnapshot();
+  });  
 });

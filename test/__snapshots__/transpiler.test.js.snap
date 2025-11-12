@@ -34,3 +34,286 @@ exports[`Transpiler should transpile handle pre and post whitespace 1`] = `
 ;_$e.write(\`\`);;_$e.safe_write( a );
 ;_$e.write(\`End\`);"
 `;
+
+exports[`Transpiler test assignment access 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+var arr = [foo.bar, 2, 3];
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test computed property access 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+foo.arr = {
+  [foo.arg]: foo.bar
+};
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test globals / strict 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+
+_$e.safe_write(Math.PI);
+
+_$e.write(\`\`);
+
+_$e.safe_write(include);
+
+_$e.write(\`\`);
+
+_$e.safe_write(foo.var1);
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test globals 1`] = `
+"async function anonymous(ejs,foo
+) {
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":false,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+
+_$e.safe_write(Math.PI);
+
+_$e.write(\`\`);
+
+_$e.safe_write(include);
+
+_$e.write(\`\`);
+
+_$e.safe_write((foo.var1 ?? ''));
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test local assignement access 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+foo.arr = [foo.bar, 2, 3];
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test property access 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+
+_$e.safe_write(foo.arr["foo"].bar);
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test property access 2`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+foo.arr = {
+  foo: foo.bar
+};
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test var declaration 1`] = `
+"async function anonymous(ejs,foo
+) {
+"use strict";
+if (arguments.length < 2) {
+	foo = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"strict":true,"localsName":"foo"});
+} else {
+	foo = foo || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+foo._filename = undefined;
+const include = ejs.include.bind(ejs, foo, undefined);
+const block = ejs.block.bind(ejs, foo);
+foo._include = include;
+foo._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, foo, undefined, _$e);
+_$e.write(\`\`);
+var arr;
+
+return _$e.toString();
+}"
+`;
+
+exports[`Transpiler test without options 1`] = `
+"async function anonymous(ejs,locals
+) {
+if (arguments.length < 2) {
+	locals = ejs;
+	ejs = (typeof global != "undefined" && global.ejs) || (typeof window != "undefined" && window.ejs);
+	if(!ejs) return Promise.reject(new Error("EJS module is not loaded"));
+	ejs = new ejs({"localsName":"locals"});
+} else {
+	locals = locals || {};
+}
+const _$e = ejs.output();
+ejs._output = _$e;
+locals._filename = undefined;
+const include = ejs.include.bind(ejs, locals, undefined);
+const block = ejs.block.bind(ejs, locals);
+locals._include = include;
+locals._output = _$e;
+const echo = _$e.safe_write.bind(_$e);
+const write = _$e.write.bind(_$e);
+const layout = ejs.layout.bind(ejs, locals, undefined, _$e);
+_$e.write(\`\`);
+
+_$e.safe_write((locals.bar ?? ''));
+
+return _$e.toString();
+}"
+`;
