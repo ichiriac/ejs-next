@@ -1,8 +1,5 @@
 # ejs-next
-
-[![Coverage Status](https://coveralls.io/repos/github/ichiriac/ejs-next/badge.svg?branch=master)](https://coveralls.io/github/ichiriac/ejs-next?branch=master)
-
-EJS next generation
+EJS - the next generation that supports async
 
 ---
 
